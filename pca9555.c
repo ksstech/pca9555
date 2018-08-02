@@ -33,8 +33,6 @@
 
 #include	<stdint.h>
 
-#define		MODCODE						0x6002
-
 // ######################################## DEBUG MACROS ###########################################
 
 #define	pca9555DEBUG				0x0000
