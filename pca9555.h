@@ -95,6 +95,7 @@ typedef struct {
 } PCA9555_s ;
 
 extern	PCA9555_s sPCA9555 ;
+extern	uint32_t	pcaSuccessCount, pcaResetCount ;
 
 // ####################################### Global functions ########################################
 
@@ -109,3 +110,4 @@ void	halPCA9555_DIG_OUT_Toggle(uint8_t pin) ;
 
 int32_t	halPCA9555_Diagnostics(void) ;
 int32_t	halPCA9555_Identify(uint8_t eChan, uint8_t Addr) ;
+int32_t	halPCA9555_Check(void);
