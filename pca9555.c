@@ -48,7 +48,7 @@ const char * DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
 
 // ####################################### Local functions #########################################
 
-int32_t	halPCA9555_ReadRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
+static	int32_t	halPCA9555_ReadRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
 	IF_SL_DBG(debugREGISTERS, "#%d %s : %016J", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0 / 2 / 4 / 6
 	int32_t iRetVal = halI2C_WriteRead(&psPCA9555->sI2Cdev, &cChr, sizeof(cChr), (uint8_t *) &psPCA9555->Regs[Reg], sizeof(uint16_t)) ;
@@ -56,7 +56,7 @@ int32_t	halPCA9555_ReadRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
 	return iRetVal ;
 }
 
-int32_t	halPCA9555_WriteRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
+static	int32_t	halPCA9555_WriteRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
 	uint8_t	cBuf[3] ;
 	cBuf[0] = Reg << 1 ;						// force to uint16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = psPCA9555->Regs[Reg] >> 8 ;
@@ -86,7 +86,6 @@ void	halPCA9555_AllON(PCA9555_s * psPCA9555) {
 	psPCA9555->Regs[regPCA9555_OUT] = 0xFFFF ;
 	halPCA9555_WriteRegister(psPCA9555, regPCA9555_OUT) ;
 }
-
 
 void	halPCA9555_Reset(PCA9555_s * psPCA9555) {
 	halPCA9555_AllOutputs(psPCA9555) ;
@@ -238,7 +237,7 @@ int32_t	halPCA9555_Identify(uint8_t eChan, uint8_t Addr) {
 uint32_t	pcaSuccessCount = 0, pcaResetCount = 0 ;
 
 int32_t	halPCA9555_Check(void) {
-	myASSERT(sPCA9555.sI2Cdev.addrI2C != 0) ;
+	IF_myASSERT(debugPARAM, sPCA9555.sI2Cdev.addrI2C != 0) ;
 	halPCA9555_ReadRegister(&sPCA9555, regPCA9555_IN) ;
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
