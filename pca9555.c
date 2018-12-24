@@ -33,8 +33,6 @@
 
 #include	<stdint.h>
 
-// ######################################## DEBUG MACROS ###########################################
-
 #define	debugFLAG					0x000C
 
 #define	debugREGISTERS				(debugFLAG & 0x0001)
