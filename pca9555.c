@@ -33,12 +33,13 @@
 
 #include	<stdint.h>
 
-#define	debugFLAG					0x000C
+#define	debugFLAG					0xC000
 
 #define	debugREGISTERS				(debugFLAG & 0x0001)
 #define	debugTRACK					(debugFLAG & 0x0002)
-#define	debugPARAM					(debugFLAG & 0x0004)
-#define	debugSUCCESS				(debugFLAG & 0x0008)
+
+#define	debugPARAM					(debugFLAG & 0x4000)
+#define	debugSUCCESS				(debugFLAG & 0x8000)
 
 PCA9555_s	sPCA9555 = { 0 } ;
 
@@ -102,7 +103,7 @@ void	halPCA9555_DIG_IN_Config(uint8_t pin) {
 uint8_t	halPCA9555_DIG_IN_GetState(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM)
 	// Ensure we are reading an input pin
-	myASSERT((sPCA9555.Regs[regPCA9555_CFG] & (0x0001 << pin)) == 1)
+	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (0x0001 << pin)) == 1)
 	halPCA9555_ReadRegister(&sPCA9555, regPCA9555_IN) ;
 	return (sPCA9555.Regs[regPCA9555_IN] & (0x0001 << pin)) ? true : false ;
 }
@@ -110,7 +111,7 @@ uint8_t	halPCA9555_DIG_IN_GetState(uint8_t pin) {
 void	halPCA9555_DIG_IN_Invert(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM)
 	// Ensure we are inverting an input pin
-	myASSERT((sPCA9555.Regs[regPCA9555_CFG] & (1U << pin)) == 1)
+	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (1U << pin)) == 1)
 	sPCA9555.Regs[regPCA9555_POL] ^= (1U << pin) ;
 	halPCA9555_WriteRegister(&sPCA9555, regPCA9555_POL) ;
 }
