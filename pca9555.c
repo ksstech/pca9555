@@ -30,14 +30,16 @@
 #include	"x_buffers.h"
 #include	"x_errors_events.h"
 #include	"x_syslog.h"
+#include	"x_systiming.h"
 
 #include	<stdint.h>
 
-#define	debugFLAG					0xC000
+#define	debugFLAG					0x0000
 
 #define	debugREGISTERS				(debugFLAG & 0x0001)
-#define	debugTRACK					(debugFLAG & 0x0002)
+#define	debugTIMING					(debugFLAG & 0x0002)
 
+#define	debugTRACK					(debugFLAG & 0x2000)
 #define	debugPARAM					(debugFLAG & 0x4000)
 #define	debugSUCCESS				(debugFLAG & 0x8000)
 
@@ -142,7 +144,9 @@ void	halPCA9555_DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
 
 int32_t	halPCA9555_DIG_OUT_WriteAll(void) {
 	if (sPCA9555.f_WriteIsDirty) {
+		IF_EXEC_1(debugTIMING, xSysTimerStart, systimerPCA9555) ;
 		halPCA9555_WriteRegister(&sPCA9555, regPCA9555_OUT) ;
+		IF_EXEC_1(debugTIMING, xSysTimerStop, systimerPCA9555) ;
 		sPCA9555.f_WriteIsDirty = 0 ;					// show as clean, just written
 		return 1 ;
 	}
@@ -230,13 +234,19 @@ int32_t	halPCA9555_Identify(uint8_t eChan, uint8_t Addr) {
 	sPCA9555.sI2Cdev.epidI2C.epuri		= URI_UNKNOWN ;
 	sPCA9555.sI2Cdev.epidI2C.epunit		= UNIT_UNKNOWN ;
 	halPCA9555_Reset(&sPCA9555) ;
+	IF_SYSTIMER_RESET_NUM(debugTIMING, systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(10), myUS_TO_CLOCKS(1000)) ;
 	return erSUCCESS ;
 }
 
-uint32_t	pcaSuccessCount = 0, pcaResetCount = 0 ;
+#define	pcaCHECK_INTERVAL				(30 * MILLIS_IN_SECOND)
+uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
-int32_t	halPCA9555_Check(void) {
+int32_t	halPCA9555_Check(uint32_t tIntvl) {
 	IF_myASSERT(debugPARAM, sPCA9555.sI2Cdev.addrI2C != 0) ;
+	pcaCheckInterval += pdMS_TO_TICKS(tIntvl) ;
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) {
+		return erSUCCESS ;
+	}
 	halPCA9555_ReadRegister(&sPCA9555, regPCA9555_IN) ;
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
@@ -252,6 +262,6 @@ int32_t	halPCA9555_Check(void) {
 	halPCA9555_WriteRegister(&sPCA9555, regPCA9555_CFG) ;
 	halPCA9555_WriteRegister(&sPCA9555, regPCA9555_POL) ;
 	halPCA9555_WriteRegister(&sPCA9555, regPCA9555_OUT) ;
-	SL_ERR("[PCA9555] I2C Bus reset & re-init done, Count Success=%d Fail=%d", pcaSuccessCount, ++pcaResetCount) ;
+	SL_ERR("I2C Recover done, ok=%d vs %d", pcaSuccessCount, ++pcaResetCount) ;
 	return 1 ;
 }
