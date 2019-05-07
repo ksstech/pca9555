@@ -50,7 +50,7 @@ const char * DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
 // ####################################### Local functions #########################################
 
 static	int32_t	halPCA9555_ReadRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
-	IF_SL_DBG(debugREGISTERS, "#%d %s : %016J", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
+	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0 / 2 / 4 / 6
 	int32_t iRetVal = halI2C_WriteRead(&psPCA9555->sI2Cdev, &cChr, sizeof(cChr), (uint8_t *) &psPCA9555->Regs[Reg], sizeof(uint16_t)) ;
 	IF_myASSERT(debugSUCCESS, iRetVal == erSUCCESS)
@@ -62,7 +62,7 @@ static	int32_t	halPCA9555_WriteRegister(PCA9555_s * psPCA9555, uint8_t Reg) {
 	cBuf[0] = Reg << 1 ;						// force to uint16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = psPCA9555->Regs[Reg] >> 8 ;
 	cBuf[2] = psPCA9555->Regs[Reg] & 0xFF ;
-	IF_SL_DBG(debugREGISTERS, "#%d %s : %016J", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
+	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
 	int32_t iRetVal = halI2C_Write(&psPCA9555->sI2Cdev, cBuf, sizeof(cBuf)) ;
 	IF_myASSERT(debugSUCCESS, iRetVal == erSUCCESS) ;
 	return iRetVal ;
@@ -165,32 +165,32 @@ void	halPCA9555_DIG_OUT_Toggle(uint8_t pin) {
 
 int32_t	halPCA9555_Diagnostics(void) {
 	// configure as outputs and display
-	SL_DBG("Default (all Outputs )status") ;
+	xprintf("PCA9555: Default (all Outputs )status\n") ;
 	halPCA9555_AllOutputs(&sPCA9555) ;
 	vTaskDelay(pdMS_TO_TICKS(halPCA9555_TEST_INTERVAL)) ;
 
 	// set all OFF and display
-	SL_DBG("All outputs (OFF) status") ;
+	xprintf("PCA9555: All outputs (OFF) status\n") ;
 	halPCA9555_AllOFF(&sPCA9555) ;
 	vTaskDelay(pdMS_TO_TICKS(halPCA9555_TEST_INTERVAL)) ;
 
 	// set all ON and display
-	SL_DBG("All outputs (ON) status") ;
+	xprintf("PCA9555: All outputs (ON) status\n") ;
 	halPCA9555_AllON(&sPCA9555) ;
 	vTaskDelay(pdMS_TO_TICKS(halPCA9555_TEST_INTERVAL)) ;
 
 	// set all OFF and display
-	SL_DBG("All outputs (OFF) status") ;
+	xprintf("PCA9555: All outputs (OFF) status\n") ;
 	halPCA9555_AllOFF(&sPCA9555) ;
 	vTaskDelay(pdMS_TO_TICKS(halPCA9555_TEST_INTERVAL)) ;
 
 	// set all back to inputs and display
-	SL_DBG("All Inputs (again) status") ;
+	xprintf("PCA9555: All Inputs (again) status\n") ;
 	halPCA9555_AllInputs(&sPCA9555) ;
 	vTaskDelay(pdMS_TO_TICKS(halPCA9555_TEST_INTERVAL)) ;
 
 	// Change INput to OUTput(0) and turn ON(1)
-	SL_DBG("Config as Outputs 1 by 1, switch ON using SetState") ;
+	xprintf("PCA9555: Config as Outputs 1 by 1, switch ON using SetState\n") ;
 	for (uint8_t pin = 0; pin < pinPCA9555_NUM; pin++) {
 		halPCA9555_DIG_OUT_Config(pin) ;				// default to OFF (0) after config
 		halPCA9555_DIG_OUT_SetState(pin, 1, 1) ;
@@ -198,13 +198,13 @@ int32_t	halPCA9555_Diagnostics(void) {
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	SL_DBG("Switch OFF 1 by 1 using TOGGLE") ;
+	xprintf("PCA9555: Switch OFF 1 by 1 using TOGGLE\n") ;
 	for (uint8_t pin = 0; pin < pinPCA9555_NUM; pin++) {
 		halPCA9555_DIG_OUT_Toggle(pin) ;
 		vTaskDelay(pdMS_TO_TICKS(halPCA9555_TEST_INTERVAL)) ;
 	}
 	halPCA9555_Reset(&sPCA9555) ;
-	SL_DBG("Diagnostics completed. All LEDs = OFF !!!") ;
+	xprintf("PCA9555: Diagnostics completed. All LEDs = OFF !!!\n") ;
 	return erSUCCESS ;
 }
 
