@@ -34,7 +34,7 @@
 
 #include	<stdint.h>
 
-#define	debugFLAG					0x0000
+#define	debugFLAG					0x0002
 
 #define	debugREGISTERS				(debugFLAG & 0x0001)
 #define	debugTIMING					(debugFLAG & 0x0002)
@@ -144,9 +144,9 @@ void	halPCA9555_DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
 
 int32_t	halPCA9555_DIG_OUT_WriteAll(void) {
 	if (sPCA9555.f_WriteIsDirty) {
-		IF_EXEC_1(debugTIMING, xSysTimerStart, systimerPCA9555) ;
+		IF_EXEC_1(debugTIMING && (systimerPCA9555 < 31), xSysTimerStart, systimerPCA9555) ;
 		halPCA9555_WriteRegister(&sPCA9555, regPCA9555_OUT) ;
-		IF_EXEC_1(debugTIMING, xSysTimerStop, systimerPCA9555) ;
+		IF_EXEC_1(debugTIMING && (systimerPCA9555 < 31), xSysTimerStop, systimerPCA9555) ;
 		sPCA9555.f_WriteIsDirty = 0 ;					// show as clean, just written
 		return 1 ;
 	}
@@ -234,7 +234,7 @@ int32_t	halPCA9555_Identify(uint8_t eChan, uint8_t Addr) {
 	sPCA9555.sI2Cdev.epidI2C.epuri		= URI_UNKNOWN ;
 	sPCA9555.sI2Cdev.epidI2C.epunit		= UNIT_UNKNOWN ;
 	halPCA9555_Reset(&sPCA9555) ;
-	IF_SYSTIMER_RESET_NUM(debugTIMING, systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(10), myUS_TO_CLOCKS(1000)) ;
+	IF_SYSTIMER_INIT(debugTIMING && (systimerPCA9555 < 31), systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(200), myUS_TO_CLOCKS(20000)) ;
 	return erSUCCESS ;
 }
 
@@ -245,7 +245,7 @@ int32_t	halPCA9555_Check(uint32_t tIntvl) {
 	IF_myASSERT(debugPARAM, sPCA9555.sI2Cdev.addrI2C != 0) ;
 	pcaCheckInterval += pdMS_TO_TICKS(tIntvl) ;
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) {
-		return erSUCCESS ;
+		return 0 ;
 	}
 	halPCA9555_ReadRegister(&sPCA9555, regPCA9555_IN) ;
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
@@ -254,7 +254,7 @@ int32_t	halPCA9555_Check(uint32_t tIntvl) {
 	IF_PRINT(debugTRACK, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
 	if (TestRead == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount ;
-		return erSUCCESS ;								// all OK, no reset required...
+		return 0 ;									// all OK, no reset required...
 	}
 	// If not, general reset, reconfigure and start again...
 	halI2C_Recover(halI2C_0) ;							// Reset FSM
