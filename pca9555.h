@@ -48,13 +48,7 @@
 
 // ######################################## Enumerations ###########################################
 
-enum {
-	regPCA9555_IN,
-	regPCA9555_OUT,
-	regPCA9555_POL,
-	regPCA9555_CFG,
-	regPCA9555_NUM,
-} ;
+enum { regPCA9555_IN, regPCA9555_OUT, regPCA9555_POL, regPCA9555_CFG, regPCA9555_NUM } ;
 
 // Enumeration used as bit shifted position into the registers
 enum {
@@ -92,22 +86,24 @@ typedef struct {
 	} ;
 	bool				Invert[pinPCA9555_NUM] ;
 	bool				f_WriteIsDirty ;
-} PCA9555_s ;
+} pca9555_t ;
 
-extern	PCA9555_s	sPCA9555 ;
+extern	pca9555_t	sPCA9555 ;
 extern	uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
 // ####################################### Global functions ########################################
 
-void	halPCA9555_DIG_IN_Config(uint8_t pin) ;
-uint8_t	halPCA9555_DIG_IN_GetState(uint8_t pin) ;
-void	halPCA9555_DIG_IN_Invert(uint8_t pin) ;
+void	pca9555DIG_IN_Config(uint8_t pin) ;
+uint8_t	pca9555DIG_IN_GetState(uint8_t pin) ;
+void	pca9555DIG_IN_Invert(uint8_t pin) ;
 
-void	halPCA9555_DIG_OUT_Config(uint8_t pin) ;
-void	halPCA9555_DIG_OUT_SetState(uint8_t pin, uint8_t State, uint8_t Now) ;
-int32_t	halPCA9555_DIG_OUT_WriteAll(void) ;
-void	halPCA9555_DIG_OUT_Toggle(uint8_t pin) ;
+void	pca9555DIG_OUT_Config(uint8_t pin) ;
+void	pca9555DIG_OUT_SetState(uint8_t pin, uint8_t State, uint8_t Now) ;
+int32_t	pca9555DIG_OUT_GetState(uint8_t pin) ;
+int32_t	pca9555DIG_OUT_WriteAll(void) ;
+void	pca9555DIG_OUT_Toggle(uint8_t pin) ;
 
-int32_t	halPCA9555_Diagnostics(void) ;
-int32_t	halPCA9555_Identify(uint8_t eChan, uint8_t Addr) ;
-int32_t	halPCA9555_Check(uint32_t tIntvl) ;
+int32_t	pca9555Diagnostics(void) ;
+int32_t	pca9555Identify(uint8_t eChan, uint8_t Addr) ;
+int32_t	pca9555Config(void) ;
+int32_t	pca9555Check(uint32_t tIntvl) ;
