@@ -142,7 +142,12 @@ void	pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
 	}
 }
 
-int32_t	halPCA9555_DIG_OUT_WriteAll(void) {
+int32_t	pca9555DIG_OUT_GetState(uint8_t pin) {
+	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM && (sPCA9555.Regs[regPCA9555_CFG] & (1 << pin)) == 0) ;
+	return (sPCA9555.Regs[regPCA9555_OUT] & (1 << pin)) ? 1 : 0 ;
+}
+
+int32_t	pca9555DIG_OUT_WriteAll(void) {
 	if (sPCA9555.f_WriteIsDirty) {
 		IF_EXEC_1(debugTIMING && (systimerPCA9555 < 31), xSysTimerStart, systimerPCA9555) ;
 		pca9555WriteRegister(&sPCA9555, regPCA9555_OUT) ;
