@@ -238,7 +238,11 @@ int32_t	pca9555Identify(uint8_t eChan, uint8_t Addr) {
 	sPCA9555.sI2Cdev.epidI2C.subclass	= subGPIO ;
 	sPCA9555.sI2Cdev.epidI2C.epuri		= URI_UNKNOWN ;
 	sPCA9555.sI2Cdev.epidI2C.epunit		= UNIT_UNKNOWN ;
-	halPCA9555_Reset(&sPCA9555) ;
+	return erSUCCESS ;
+}
+
+int32_t	pca9555Config(void) {
+	pca9555Reset(&sPCA9555) ;
 	IF_SYSTIMER_INIT(debugTIMING && (systimerPCA9555 < 31), systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(200), myUS_TO_CLOCKS(20000)) ;
 	return erSUCCESS ;
 }
