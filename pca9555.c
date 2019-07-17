@@ -27,6 +27,7 @@
 #include	"pca9555.h"
 
 #include	"x_debug.h"
+#include	"x_printf.h"
 #include	"x_buffers.h"
 #include	"x_errors_events.h"
 #include	"x_syslog.h"
@@ -243,7 +244,7 @@ int32_t	pca9555Identify(uint8_t eChan, uint8_t Addr) {
 
 int32_t	pca9555Config(void) {
 	pca9555Reset(&sPCA9555) ;
-	IF_SYSTIMER_INIT(debugTIMING && (systimerPCA9555 < 31), systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(200), myUS_TO_CLOCKS(20000)) ;
+	IF_SYSTIMER_INIT(debugTIMING && (systimerPCA9555 < 31), systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(300), myUS_TO_CLOCKS(30000)) ;
 	return erSUCCESS ;
 }
 
