@@ -53,7 +53,7 @@ int32_t	pca9555ReadRegister(pca9555_t * psPCA9555, uint8_t Reg) {
 	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0 / 2 / 4 / 6
 	int32_t iRetVal = halI2C_WriteRead(&psPCA9555->sI2Cdev, &cChr, sizeof(cChr), (uint8_t *) &psPCA9555->Regs[Reg], sizeof(uint16_t)) ;
-	IF_myASSERT(debugSUCCESS, iRetVal == erSUCCESS)
+	IF_myASSERT(debugSUCCESS, iRetVal == erSUCCESS) ;
 	return iRetVal ;
 }
 
@@ -96,30 +96,30 @@ void	pca9555Reset(pca9555_t * psPCA9555) {
 // ###################################### Global functions #########################################
 
 void	pca9555DIG_IN_Config(uint8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM)
+	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	// To configure as INput, make the bit a '1'
 	sPCA9555.Regs[regPCA9555_CFG] |= (0x0001 << pin) ;
 	pca9555WriteRegister(&sPCA9555, regPCA9555_CFG) ;
 }
 
 uint8_t	pca9555DIG_IN_GetState(uint8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM)
+	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	// Ensure we are reading an input pin
-	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (0x0001 << pin)) == 1)
+	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (0x0001 << pin)) == 1) ;
 	pca9555ReadRegister(&sPCA9555, regPCA9555_IN) ;
 	return (sPCA9555.Regs[regPCA9555_IN] & (0x0001 << pin)) ? true : false ;
 }
 
 void	pca9555DIG_IN_Invert(uint8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM)
+	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	// Ensure we are inverting an input pin
-	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (1U << pin)) == 1)
+	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (1U << pin)) == 1) ;
 	sPCA9555.Regs[regPCA9555_POL] ^= (1U << pin) ;
 	pca9555WriteRegister(&sPCA9555, regPCA9555_POL) ;
 }
 
 void	pca9555DIG_OUT_Config(uint8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM)
+	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	sPCA9555.Regs[regPCA9555_CFG] &= ~(1U << pin) ;		// To configure as OUTput, make the bit a '0'
 	pca9555WriteRegister(&sPCA9555, regPCA9555_CFG) ;
 }
