@@ -22,15 +22,17 @@
  * pca9555.c
  */
 
+#include	"pca9555.h"
+#include	"endpoints.h"
+
 #include	"x_buffers.h"
 #include	"x_errors_events.h"
 #include	"x_syslog.h"
+#include	"x_printf.h"
 #include	"x_systiming.h"
 
-#include	"hal_config.h"
 #include	"hal_debug.h"
 #include	"hal_i2c.h"
-#include	"pca9555.h"
 
 #include	<stdint.h>
 

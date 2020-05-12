@@ -1,5 +1,5 @@
-set(COMPONENT_SRCS "pca9555.c")
-set(COMPONENT_ADD_INCLUDEDIRS)
-set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES)
-register_component()
+idf_component_register(	SRCS pca9555.c 
+						INCLUDE_DIRS . 
+						REQUIRES hal_esp32
+						PRIV_REQUIRES buffers endpoints syslog printf common systiming hal_esp32
+						)
