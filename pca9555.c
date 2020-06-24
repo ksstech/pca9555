@@ -51,48 +51,48 @@ const char * DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
 
 // ####################################### Local functions #########################################
 
-int32_t	pca9555ReadRegister(pca9555_t * psPCA9555, uint8_t Reg) {
-	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
+int32_t	pca9555ReadRegister(uint8_t Reg) {
+	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0 / 2 / 4 / 6
-	int32_t iRV = halI2C_WriteRead(&psPCA9555->sI2Cdev, &cChr, sizeof(cChr), (uint8_t *) &psPCA9555->Regs[Reg], sizeof(uint16_t)) ;
+	int32_t iRV = halI2C_WriteRead(sPCA9555.psI2C, &cChr, sizeof(cChr), (uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t)) ;
 	IF_myASSERT(debugSUCCESS, iRV == erSUCCESS) ;
 	return iRV ;
 }
 
-int32_t	pca9555WriteRegister(pca9555_t * psPCA9555, uint8_t Reg) {
+int32_t	pca9555WriteRegister(uint8_t Reg) {
 	uint8_t	cBuf[3] ;
 	cBuf[0] = Reg << 1 ;						// force to uint16_t boundary 0 / 2 / 4 / 6
-	cBuf[1] = psPCA9555->Regs[Reg] >> 8 ;
-	cBuf[2] = psPCA9555->Regs[Reg] & 0xFF ;
-	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], psPCA9555->Regs[Reg]) ;
-	int32_t iRV = halI2C_Write(&psPCA9555->sI2Cdev, cBuf, sizeof(cBuf)) ;
+	cBuf[1] = sPCA9555.Regs[Reg] >> 8 ;
+	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF ;
+	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
+	int32_t iRV = halI2C_Write(sPCA9555.psI2C, cBuf, sizeof(cBuf)) ;
 	IF_myASSERT(debugSUCCESS, iRV == erSUCCESS) ;
 	return iRV ;
 }
 
-void	pca9555AllInputs(pca9555_t * psPCA9555) {
-	psPCA9555->Regs[regPCA9555_CFG] = 0xFFFF ;
-	pca9555WriteRegister(psPCA9555, regPCA9555_CFG) ;
+void	pca9555AllInputs(void) {
+	sPCA9555.Regs[regPCA9555_CFG] = 0xFFFF ;
+	pca9555WriteRegister(regPCA9555_CFG) ;
 }
 
-void	pca9555AllOutputs(pca9555_t * psPCA9555) {
-	psPCA9555->Regs[regPCA9555_CFG] = 0x0000 ;
-	pca9555WriteRegister(psPCA9555, regPCA9555_CFG) ;
+void	pca9555AllOutputs(void) {
+	sPCA9555.Regs[regPCA9555_CFG] = 0x0000 ;
+	pca9555WriteRegister(regPCA9555_CFG) ;
 }
 
-void	pca9555AllOFF(pca9555_t * psPCA9555) {
-	psPCA9555->Regs[regPCA9555_OUT] = 0x0000 ;
-	pca9555WriteRegister(psPCA9555, regPCA9555_OUT) ;
+void	pca9555AllOFF(void) {
+	sPCA9555.Regs[regPCA9555_OUT] = 0x0000 ;
+	pca9555WriteRegister(regPCA9555_OUT) ;
 }
 
-void	pca9555AllON(pca9555_t * psPCA9555) {
-	psPCA9555->Regs[regPCA9555_OUT] = 0xFFFF ;
-	pca9555WriteRegister(psPCA9555, regPCA9555_OUT) ;
+void	pca9555AllON(void) {
+	sPCA9555.Regs[regPCA9555_OUT] = 0xFFFF ;
+	pca9555WriteRegister(regPCA9555_OUT) ;
 }
 
-void	pca9555Reset(pca9555_t * psPCA9555) {
-	pca9555AllOutputs(psPCA9555) ;
-	pca9555AllOFF(psPCA9555) ;
+void	pca9555Reset(void) {
+	pca9555AllOutputs() ;
+	pca9555AllOFF() ;
 }
 
 // ###################################### Global functions #########################################
@@ -101,14 +101,14 @@ void	pca9555DIG_IN_Config(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	// To configure as INput, make the bit a '1'
 	sPCA9555.Regs[regPCA9555_CFG] |= (0x0001 << pin) ;
-	pca9555WriteRegister(&sPCA9555, regPCA9555_CFG) ;
+	pca9555WriteRegister(regPCA9555_CFG) ;
 }
 
 uint8_t	pca9555DIG_IN_GetState(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	// Ensure we are reading an input pin
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (0x0001 << pin)) == 1) ;
-	pca9555ReadRegister(&sPCA9555, regPCA9555_IN) ;
+	pca9555ReadRegister(regPCA9555_IN) ;
 	return (sPCA9555.Regs[regPCA9555_IN] & (0x0001 << pin)) ? true : false ;
 }
 
@@ -117,13 +117,13 @@ void	pca9555DIG_IN_Invert(uint8_t pin) {
 	// Ensure we are inverting an input pin
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[regPCA9555_CFG] & (1U << pin)) == 1) ;
 	sPCA9555.Regs[regPCA9555_POL] ^= (1U << pin) ;
-	pca9555WriteRegister(&sPCA9555, regPCA9555_POL) ;
+	pca9555WriteRegister(regPCA9555_POL) ;
 }
 
 void	pca9555DIG_OUT_Config(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pinPCA9555_NUM) ;
 	sPCA9555.Regs[regPCA9555_CFG] &= ~(1U << pin) ;		// To configure as OUTput, make the bit a '0'
-	pca9555WriteRegister(&sPCA9555, regPCA9555_CFG) ;
+	pca9555WriteRegister(regPCA9555_CFG) ;
 }
 
 void	pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
@@ -152,7 +152,7 @@ int32_t	pca9555DIG_OUT_GetState(uint8_t pin) {
 int32_t	pca9555DIG_OUT_WriteAll(void) {
 	if (sPCA9555.f_WriteIsDirty) {
 		IF_EXEC_1(debugTIMING && (systimerPCA9555 < 31), xSysTimerStart, systimerPCA9555) ;
-		pca9555WriteRegister(&sPCA9555, regPCA9555_OUT) ;
+		pca9555WriteRegister(regPCA9555_OUT) ;
 		IF_EXEC_1(debugTIMING && (systimerPCA9555 < 31), xSysTimerStop, systimerPCA9555) ;
 		sPCA9555.f_WriteIsDirty = 0 ;					// show as clean, just written
 		return 1 ;
@@ -163,37 +163,36 @@ int32_t	pca9555DIG_OUT_WriteAll(void) {
 void	pca9555DIG_OUT_Toggle(uint8_t pin) {
 	IF_myASSERT(debugPARAM, (pin < pinPCA9555_NUM) && (sPCA9555.Regs[regPCA9555_CFG] & (0x0001 << pin)) == 0) ;
 	sPCA9555.Regs[regPCA9555_OUT] ^= (1U << pin) ;
-	pca9555WriteRegister(&sPCA9555, regPCA9555_OUT) ;
+	pca9555WriteRegister(regPCA9555_OUT) ;
 }
 
 // ################################## Diagnostics functions ########################################
 
 #define	pca9555TEST_INTERVAL			300
 
-int32_t	pca9555Diagnostics(void) {
 	// configure as outputs and display
 	PRINT("PCA9555: Default (all Outputs )status\n") ;
-	pca9555AllOutputs(&sPCA9555) ;
+	pca9555AllOutputs() ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all OFF and display
 	PRINT("PCA9555: All outputs (OFF) status\n") ;
-	pca9555AllOFF(&sPCA9555) ;
+	pca9555AllOFF() ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all ON and display
 	PRINT("PCA9555: All outputs (ON) status\n") ;
-	pca9555AllON(&sPCA9555) ;
+	pca9555AllON() ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all OFF and display
 	PRINT("PCA9555: All outputs (OFF) status\n") ;
-	pca9555AllOFF(&sPCA9555) ;
+	pca9555AllOFF() ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all back to inputs and display
 	PRINT("PCA9555: All Inputs (again) status\n") ;
-	pca9555AllInputs(&sPCA9555) ;
+	pca9555AllInputs() ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// Change INput to OUTput(0) and turn ON(1)
@@ -210,7 +209,7 @@ int32_t	pca9555Diagnostics(void) {
 		pca9555DIG_OUT_Toggle(pin) ;
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 	}
-	pca9555Reset(&sPCA9555) ;
+	pca9555Reset() ;
 	PRINT("PCA9555: Diagnostics completed. All LEDs = OFF !!!\n") ;
 	return erSUCCESS ;
 }
@@ -258,7 +257,7 @@ int32_t	pca9555Check(uint32_t tIntvl) {
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) {
 		return 0 ;
 	}
-	pca9555ReadRegister(&sPCA9555, regPCA9555_IN) ;
+	pca9555ReadRegister(regPCA9555_IN) ;
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
 	TestRead = (TestRead >> 8) | (TestRead << 8) ;
@@ -270,9 +269,9 @@ int32_t	pca9555Check(uint32_t tIntvl) {
 	// If not, general reset, reconfigure and start again...
 	halI2C_Recover(halI2C_0) ;							// Reset FSM
 
-	pca9555WriteRegister(&sPCA9555, regPCA9555_CFG) ;
-	pca9555WriteRegister(&sPCA9555, regPCA9555_POL) ;
-	pca9555WriteRegister(&sPCA9555, regPCA9555_OUT) ;
+	pca9555WriteRegister(regPCA9555_CFG) ;
+	pca9555WriteRegister(regPCA9555_POL) ;
+	pca9555WriteRegister(regPCA9555_OUT) ;
 	SL_ERR("I2C Recover done, ok=%d vs %d", pcaSuccessCount, ++pcaResetCount) ;
 	return 1 ;
 }
