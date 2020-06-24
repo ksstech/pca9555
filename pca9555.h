@@ -73,20 +73,20 @@ enum {
 
 // ######################################### Structures ############################################
 
-typedef struct {
-	halI2Cdev_t			sI2Cdev ;
-	union {
+typedef struct __attribute__((packed)) pca9555_s {
+	i2c_dev_info_t *	psI2C ;						// size = 4
+	union {											// size = 8
 		uint16_t		Regs[regPCA9555_NUM] ;
-		struct {
+		struct __attribute__((packed)) {
 			uint16_t	Reg_IN ;
 			uint16_t	Reg_OUT ;
 			uint16_t	Reg_POL ;
 			uint16_t	Reg_CFG ;
 		} ;
 	} ;
-	bool				Invert[pinPCA9555_NUM] ;
 	bool				f_WriteIsDirty ;
 } pca9555_t ;
+DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13) ;
 
 extern	pca9555_t	sPCA9555 ;
 extern	uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
@@ -103,7 +103,7 @@ int32_t	pca9555DIG_OUT_GetState(uint8_t pin) ;
 int32_t	pca9555DIG_OUT_WriteAll(void) ;
 void	pca9555DIG_OUT_Toggle(uint8_t pin) ;
 
-int32_t	pca9555Diagnostics(void) ;
-int32_t	pca9555Identify(uint8_t eChan, uint8_t Addr) ;
-int32_t	pca9555Config(void) ;
+int32_t	pca9555Diagnostics(i2c_dev_info_t * psI2C_DI) ;
+int32_t	pca9555Identify(i2c_dev_info_t * psI2C_DI) ;
+int32_t	pca9555Config(i2c_dev_info_t * psI2C_DI) ;
 int32_t	pca9555Check(uint32_t tIntvl) ;

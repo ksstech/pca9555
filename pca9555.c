@@ -170,6 +170,33 @@ void	pca9555DIG_OUT_Toggle(uint8_t pin) {
 
 #define	pca9555TEST_INTERVAL			300
 
+int32_t	pca9555Identify(i2c_dev_info_t * psI2C_DI) {
+	psI2C_DI->Delay	= pdMS_TO_TICKS(10) ;
+	psI2C_DI->Type	= i2cDEV_PCA9555 ;
+	sPCA9555.psI2C 	= psI2C_DI ;
+
+	pca9555AllInputs() ;								// Configure all as inputs
+	sPCA9555.Regs[regPCA9555_POL] = 0x0000 ;			// and ensure none polarity inverted
+	pca9555WriteRegister(regPCA9555_POL) ;
+	pca9555ReadRegister(regPCA9555_IN) ;
+	uint16_t RegStart = sPCA9555.Regs[regPCA9555_IN] ;	// save the pre-invert status
+
+	sPCA9555.Regs[regPCA9555_POL] = 0xFFFF ;			// then invert all pins
+	pca9555WriteRegister(regPCA9555_POL) ;
+	pca9555ReadRegister(regPCA9555_IN) ;				// read back the (inverted) status
+	if (sPCA9555.Regs[regPCA9555_IN] != (RegStart ^ 0xFFFF)) {	// check if it is as expected..
+		return erFAILURE ;
+	}
+	return erSUCCESS ;
+}
+
+int32_t	pca9555Config(i2c_dev_info_t * psI2C_DI) {
+	pca9555Reset() ;
+	IF_SYSTIMER_INIT(debugTIMING, systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(300), myUS_TO_CLOCKS(30000)) ;
+	return erSUCCESS ;
+}
+
+int32_t	pca9555Diagnostics(i2c_dev_info_t * psI2C_DI) {
 	// configure as outputs and display
 	PRINT("PCA9555: Default (all Outputs )status\n") ;
 	pca9555AllOutputs() ;
@@ -214,45 +241,17 @@ void	pca9555DIG_OUT_Toggle(uint8_t pin) {
 	return erSUCCESS ;
 }
 
-int32_t	pca9555Identify(uint8_t eChan, uint8_t Addr) {
-	sPCA9555.sI2Cdev.chanI2C	= eChan ;
-	sPCA9555.sI2Cdev.addrI2C	= Addr ;
-	sPCA9555.sI2Cdev.dlayI2C	= pdMS_TO_TICKS(10) ;
-	pca9555AllInputs(&sPCA9555) ;						// Configure all as inputs
-	sPCA9555.Regs[regPCA9555_POL] = 0x0000 ;			// and ensure none polarity inverted
-	pca9555WriteRegister(&sPCA9555, regPCA9555_POL) ;
-
-	pca9555ReadRegister(&sPCA9555, regPCA9555_IN) ;
-	uint16_t RegStart = sPCA9555.Regs[regPCA9555_IN] ;	// save the pre-invert status
-
-	sPCA9555.Regs[regPCA9555_POL] = 0xFFFF ;			// then invert all pins
-	pca9555WriteRegister(&sPCA9555, regPCA9555_POL) ;
-
-	pca9555ReadRegister(&sPCA9555, regPCA9555_IN) ;		// read back the (inverted) status
-	if (sPCA9555.Regs[regPCA9555_IN] != (RegStart ^ 0xFFFF)) {	// check if it is as expected..
-		sPCA9555.sI2Cdev.chanI2C	= 0 ;
-		sPCA9555.sI2Cdev.addrI2C	= 0 ;
-		sPCA9555.sI2Cdev.dlayI2C	= 0 ;
-		return erFAILURE ;
-	}
-	sPCA9555.sI2Cdev.epidI2C.devclass	= devPCA9555 ;
-	sPCA9555.sI2Cdev.epidI2C.subclass	= subGPIO ;
-	sPCA9555.sI2Cdev.epidI2C.epuri		= URI_UNKNOWN ;
-	sPCA9555.sI2Cdev.epidI2C.epunit		= UNIT_UNKNOWN ;
-	return erSUCCESS ;
-}
-
-int32_t	pca9555Config(void) {
-	pca9555Reset(&sPCA9555) ;
-	IF_SYSTIMER_INIT(debugTIMING && (systimerPCA9555 < 31), systimerPCA9555, systimerCLOCKS, "PCA9555", myUS_TO_CLOCKS(300), myUS_TO_CLOCKS(30000)) ;
-	return erSUCCESS ;
-}
-
+/**
+ * Due to an induced reverse voltage cause by the collapsing magnetic field of the solenoid in the
+ * door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
+ * to at regular intervals check that the PCA9555 can be read and that the value read back corresponds
+ * with the last value written. If not, the FSM of the I2C peripheral on the ESP32 must be reset completely
+ */
 #define	pcaCHECK_INTERVAL				(30 * MILLIS_IN_SECOND)
 uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
 int32_t	pca9555Check(uint32_t tIntvl) {
-	IF_myASSERT(debugPARAM, sPCA9555.sI2Cdev.addrI2C != 0) ;
+	IF_myASSERT(debugPARAM, sPCA9555.psI2C->Addr) ;
 	pcaCheckInterval += pdMS_TO_TICKS(tIntvl) ;
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) {
 		return 0 ;
