@@ -22,21 +22,16 @@
  * pca9555.c
  */
 
-#include	"pca9555.h"
-#include	"endpoints.h"
+#include	"pca9555.h"									// +hal_i2c +x_struct_union +stdint
 
-#include	"x_buffers.h"
-#include	"x_errors_events.h"
-#include	"syslog.h"
-#include	"printfx.h"
-#include	"systiming.h"
+#include	"x_errors_events.h"							// + stdint
+#include	"syslog.h"									// +x_definitions +stdarg +stdint
+#include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
+#include	"systiming.h"								// +x_definitions +stdbool +stdint
 
-#include	"hal_debug.h"
-#include	"hal_i2c.h"
+#include	"hal_debug.h"								// +esp_err +rom/esp_sys
 
-#include	<stdint.h>
-
-#define	debugFLAG					0xC002
+#define	debugFLAG					0x0000
 
 #define	debugREGISTERS				(debugFLAG & 0x0001)
 #define	debugTIMING					(debugFLAG & 0x0002)
@@ -45,8 +40,31 @@
 #define	debugPARAM					(debugFLAG & 0x4000)
 #define	debugSUCCESS				(debugFLAG & 0x8000)
 
-pca9555_t	sPCA9555 = { 0 } ;
+// ########################################## MACROS ###############################################
 
+#define	configPCA9555_LOW			0x20		// default with A2 A1 A0 all '0'
+#define	configPCA9555_HIGH			0x27
+
+// ######################################### Structures ############################################
+
+typedef struct __attribute__((packed)) pca9555_s {
+	i2c_dev_info_t *	psI2C ;						// size = 4
+	union {											// size = 8
+		uint16_t		Regs[regPCA9555_NUM] ;
+		struct __attribute__((packed)) {
+			uint16_t	Reg_IN ;
+			uint16_t	Reg_OUT ;
+			uint16_t	Reg_POL ;
+			uint16_t	Reg_CFG ;
+		} ;
+	} ;
+	bool				f_WriteIsDirty ;
+} pca9555_t ;
+DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13) ;
+
+// ######################################### Local variables #######################################
+
+pca9555_t	sPCA9555 = { 0 } ;
 const char * DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
 
 // ####################################### Local functions #########################################
@@ -54,9 +72,7 @@ const char * DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
 int32_t	pca9555ReadRegister(uint8_t Reg) {
 	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0 / 2 / 4 / 6
-	int32_t iRV = halI2C_WriteRead(sPCA9555.psI2C, &cChr, sizeof(cChr), (uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t)) ;
-	IF_myASSERT(debugSUCCESS, iRV == erSUCCESS) ;
-	return iRV ;
+	return halI2C_WriteRead(sPCA9555.psI2C, &cChr, sizeof(cChr), (uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t)) ;
 }
 
 int32_t	pca9555WriteRegister(uint8_t Reg) {
@@ -65,9 +81,7 @@ int32_t	pca9555WriteRegister(uint8_t Reg) {
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8 ;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF ;
 	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
-	int32_t iRV = halI2C_Write(sPCA9555.psI2C, cBuf, sizeof(cBuf)) ;
-	IF_myASSERT(debugSUCCESS, iRV == erSUCCESS) ;
-	return iRV ;
+	return halI2C_Write(sPCA9555.psI2C, cBuf, sizeof(cBuf)) ;
 }
 
 void	pca9555AllInputs(void) {
@@ -251,7 +265,6 @@ int32_t	pca9555Diagnostics(i2c_dev_info_t * psI2C_DI) {
 uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
 int32_t	pca9555Check(uint32_t tIntvl) {
-	IF_myASSERT(debugPARAM, sPCA9555.psI2C->Addr) ;
 	pcaCheckInterval += pdMS_TO_TICKS(tIntvl) ;
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) {
 		return 0 ;

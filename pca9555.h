@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-18 AM Maree/KSS Technologies (Pty) Ltd.
+ * Copyright 2014-20 AM Maree/KSS Technologies (Pty) Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -24,31 +24,21 @@
 
 #pragma		once
 
-#include	"hal_i2c.h"
+#include	"hal_i2c.h"									// +x_struct_union +stdint
 
-// Device base address
-#define	configPCA9555_ADDR_0			0x20		// default with A2 A1 A0 all '0'
-#define	configPCA9555_ADDR_1			0x21
-#define	configPCA9555_ADDR_2			0x22
-#define	configPCA9555_ADDR_3			0x23
-#define	configPCA9555_ADDR_4			0x24
-#define	configPCA9555_ADDR_5			0x25
-#define	configPCA9555_ADDR_6			0x26
-#define	configPCA9555_ADDR_7			0x27
-
-// Device registers
-#define	configPCA9555_INPUT_0			0x00		// INput status registers
-#define	configPCA9555_INPUT_1			0x01
-#define	configPCA9555_OUTPUT_0			0x02		// OUTput control registers
-#define	configPCA9555_OUTPUT_1			0x03
-#define	configPCA9555_POLINV_0			0x04		// Polarity inversion
-#define	configPCA9555_POLINV_1			0x05		// 0=normal, 1=Inverted
-#define	configPCA9555_CONFIG_0			0x06		// Direction config
-#define	configPCA9555_CONFIG_1			0x07		// 0=Out, 1=In
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // ######################################## Enumerations ###########################################
 
-enum { regPCA9555_IN, regPCA9555_OUT, regPCA9555_POL, regPCA9555_CFG, regPCA9555_NUM } ;
+enum {												// Register index enumeration
+	regPCA9555_IN,									// INput status registers
+	regPCA9555_OUT, 								// OUTput control registers
+	regPCA9555_POL, 								// POLarity 0=normal, 1=Inverted
+	regPCA9555_CFG, 								// Direction config 0=OUT 1=IN
+	regPCA9555_NUM,
+} ;
 
 // Enumeration used as bit shifted position into the registers
 enum {
@@ -73,23 +63,11 @@ enum {
 
 // ######################################### Structures ############################################
 
-typedef struct __attribute__((packed)) pca9555_s {
-	i2c_dev_info_t *	psI2C ;						// size = 4
-	union {											// size = 8
-		uint16_t		Regs[regPCA9555_NUM] ;
-		struct __attribute__((packed)) {
-			uint16_t	Reg_IN ;
-			uint16_t	Reg_OUT ;
-			uint16_t	Reg_POL ;
-			uint16_t	Reg_CFG ;
-		} ;
-	} ;
-	bool				f_WriteIsDirty ;
-} pca9555_t ;
-DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13) ;
 
-extern	pca9555_t	sPCA9555 ;
+// ####################################### Public variables ########################################
+
 extern	uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
+
 
 // ####################################### Global functions ########################################
 
@@ -107,3 +85,7 @@ int32_t	pca9555Diagnostics(i2c_dev_info_t * psI2C_DI) ;
 int32_t	pca9555Identify(i2c_dev_info_t * psI2C_DI) ;
 int32_t	pca9555Config(i2c_dev_info_t * psI2C_DI) ;
 int32_t	pca9555Check(uint32_t tIntvl) ;
+
+#ifdef __cplusplus
+}
+#endif
