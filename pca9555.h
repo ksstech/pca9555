@@ -40,8 +40,7 @@ enum {												// Register index enumeration
 	regPCA9555_NUM,
 } ;
 
-// Enumeration used as bit shifted position into the registers
-enum {
+enum {												// bit shifted position into the registers
 	pinPCA9555_0,
 	pinPCA9555_1,
 	pinPCA9555_2,
@@ -67,7 +66,6 @@ enum {
 // ####################################### Public variables ########################################
 
 extern	uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
-
 
 // ####################################### Global functions ########################################
 
