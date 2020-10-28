@@ -25,8 +25,8 @@
 #include	"pca9555.h"									// +hal_i2c +x_struct_union +stdint
 
 #include	"x_errors_events.h"							// + stdint
-#include	"syslog.h"									// +x_definitions +stdarg +stdint
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
+#include	"syslog.h"									// +x_definitions +stdarg +stdint
 #include	"systiming.h"								// +x_definitions +stdbool +stdint
 
 #include	"hal_debug.h"								// +esp_err +rom/esp_sys
@@ -65,7 +65,7 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13) ;
 // ######################################### Local variables #######################################
 
 pca9555_t	sPCA9555 = { 0 } ;
-const char * DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
+const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } ;
 
 // ####################################### Local functions #########################################
 
