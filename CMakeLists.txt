@@ -3,5 +3,5 @@ idf_component_register(
 	INCLUDE_DIRS "."
 	PRIV_INCLUDE_DIRS
 	REQUIRES hal_esp32
-	PRIV_REQUIRES printf systiming
+	PRIV_REQUIRES printfx systiming
 )
