@@ -22,14 +22,15 @@
  * pca9555.c
  */
 
+#include	"hal_config.h"
+#include	"hal_timer.h"
+
 #include	"pca9555.h"									// +hal_i2c +x_struct_union +stdint
 
 #include	"x_errors_events.h"							// + stdint
 #include	"printfx.h"									// +x_definitions +stdarg +stdint +stdio
 #include	"syslog.h"									// +x_definitions +stdarg +stdint
 #include	"systiming.h"								// +x_definitions +stdbool +stdint
-
-#include	"hal_debug.h"								// +esp_err +rom/esp_sys
 
 #define	debugFLAG					0x0000
 
