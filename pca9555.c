@@ -270,3 +270,7 @@ int32_t	pca9555Check(uint32_t tIntvl) {
 	SL_ERR("I2C Recover done, ok=%d vs %d", pcaSuccessCount, ++pcaResetCount) ;
 	return 1 ;
 }
+
+void	pca9555Report(void) {
+	printfx("\tPCA9555 Checks  OK=%d  Fail=%d\n", pcaSuccessCount, pcaResetCount) ;
+}

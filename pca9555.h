@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-20 AM Maree/KSS Technologies (Pty) Ltd.
+ * Copyright 2014-21 AM Maree/KSS Technologies (Pty) Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -65,7 +65,6 @@ enum {												// bit shifted position into the registers
 
 // ####################################### Public variables ########################################
 
-extern	uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
 // ####################################### Global functions ########################################
 
