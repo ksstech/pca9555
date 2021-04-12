@@ -65,8 +65,9 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 
 int32_t	pca9555ReadRegister(uint8_t Reg) {
 	IF_PRINT(debugREGISTERS, "#%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
-	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0 / 2 / 4 / 6
-	return halI2C_WriteRead(sPCA9555.psI2C, &cChr, sizeof(cChr), (uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t)) ;
+	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0/2/4/6
+	return halI2C_WriteRead(sPCA9555.psI2C, &cChr, sizeof(cChr),
+			(uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t)) ;
 }
 
 int32_t	pca9555WriteRegister(uint8_t Reg) {
