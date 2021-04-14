@@ -1,9 +1,5 @@
 /*
- * Copyright 2014-21 AM Maree/KSS Technologies (Pty) Ltd.
- */
-
-/*
- * pca9555.c
+ * Copyright 2014-21 Andre M. Maree/KSS Technologies (Pty) Ltd.
  */
 
 #include	"hal_config.h"
@@ -14,14 +10,15 @@
 #include	"syslog.h"									// +x_definitions +stdarg +stdint
 #include	"systiming.h"								// +x_definitions +stdbool +stdint
 
-#define	debugFLAG					0x0000
+#define	debugFLAG					0xF000
 
 #define	debugREGISTERS				(debugFLAG & 0x0001)
-#define	debugTIMING					(debugFLAG & 0x0002)
+#define	debugSTATES					(debugFLAG & 0x0002)
 
-#define	debugTRACK					(debugFLAG & 0x2000)
-#define	debugPARAM					(debugFLAG & 0x4000)
-#define	debugSUCCESS				(debugFLAG & 0x8000)
+#define	debugTIMING					(debugFLAG_GLOBAL & debugFLAG & 0x1000)
+#define	debugTRACK					(debugFLAG_GLOBAL & debugFLAG & 0x2000)
+#define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
+#define	debugRESULT					(debugFLAG_GLOBAL & debugFLAG & 0x8000)
 
 // ########################################## MACROS ###############################################
 
@@ -116,7 +113,7 @@ void	pca9555DIG_IN_Config(uint8_t pin) {
 uint8_t	pca9555DIG_IN_GetState(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// Ensure we are reading an input pin
-	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1) ;
+	IF_myASSERT(debugSTATES, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1) ;
 	pca9555ReadRegister(pca9555_IN) ;
 	return (sPCA9555.Regs[pca9555_IN] & (0x0001 << pin)) ? 1 : 0 ;
 }
@@ -124,7 +121,7 @@ uint8_t	pca9555DIG_IN_GetState(uint8_t pin) {
 void	pca9555DIG_IN_Invert(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// Ensure we are inverting an input pin
-	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1) ;
+	IF_myASSERT(debugSTATES, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1) ;
 	sPCA9555.Regs[pca9555_POL] ^= (1U << pin) ;
 	pca9555WriteRegister(pca9555_POL) ;
 }
@@ -147,7 +144,7 @@ void	pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
 		sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin) ;
 	}
 	sPCA9555.f_WriteIsDirty = 1 ;						// bit just changed, show as dirty
-	IF_PRINT(debugTRACK, "Pin #%d [%d -> %d]", pin, CurState, NewState) ;
+	IF_PRINT(debugSTATES, "Pin #%d [%d -> %d]", pin, CurState, NewState) ;
 	if (Now) {
 		pca9555DIG_OUT_WriteAll() ;
 	}
@@ -185,14 +182,14 @@ int32_t	pca9555Identify(i2c_dev_info_t * psI2C_DI) {
 	sPCA9555.psI2C 	= psI2C_DI ;
 
 	pca9555AllInputs() ;								// Configure all as inputs
-	sPCA9555.Regs[pca9555_POL] = 0x0000 ;			// and ensure none polarity inverted
+	sPCA9555.Regs[pca9555_POL] = 0x0000 ;				// and ensure none polarity inverted
 	pca9555WriteRegister(pca9555_POL) ;
 	pca9555ReadRegister(pca9555_IN) ;
-	uint16_t RegStart = sPCA9555.Regs[pca9555_IN] ;	// save the pre-invert status
+	uint16_t RegStart = sPCA9555.Regs[pca9555_IN] ;		// save the pre-invert status
 
-	sPCA9555.Regs[pca9555_POL] = 0xFFFF ;			// then invert all pins
+	sPCA9555.Regs[pca9555_POL] = 0xFFFF ;				// then invert all pins
 	pca9555WriteRegister(pca9555_POL) ;
-	pca9555ReadRegister(pca9555_IN) ;				// read back the (inverted) status
+	pca9555ReadRegister(pca9555_IN) ;					// read back the (inverted) status
 	if (sPCA9555.Regs[pca9555_IN] != (RegStart ^ 0xFFFF)) {	// check if it is as expected..
 		return erFAILURE ;
 	}
@@ -241,7 +238,7 @@ int32_t	pca9555Diagnostics(i2c_dev_info_t * psI2C_DI) {
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
 	printfx("PCA9555: Switch OFF 1 by 1 using TOGGLE\n") ;
-	for (uint8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
+	for (uint8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
 		pca9555DIG_OUT_Toggle(pin) ;
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 	}
@@ -268,7 +265,7 @@ int32_t	pca9555Check(uint32_t tIntvl) {
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
 	TestRead = (TestRead >> 8) | (TestRead << 8) ;
-	IF_PRINT(debugTRACK, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
+	IF_PRINT(debugSTATES, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
 	if (TestRead == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount ;
 		return 0 ;									// all OK, no reset required...
