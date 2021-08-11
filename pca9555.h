@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-21 AM Maree/KSS Technologies (Pty) Ltd.
+ * Copyright 2014-21 Andre M. Maree/KSS Technologies (Pty) Ltd.
  */
 
 #pragma		once
@@ -22,20 +22,21 @@ extern "C" {
 
 // ####################################### Global functions ########################################
 
-void	pca9555DIG_IN_Config(uint8_t pin) ;
+void pca9555DIG_IN_Config(uint8_t pin) ;
 uint8_t	pca9555DIG_IN_GetState(uint8_t pin) ;
-void	pca9555DIG_IN_Invert(uint8_t pin) ;
+void pca9555DIG_IN_Invert(uint8_t pin) ;
 
-void	pca9555DIG_OUT_Config(uint8_t pin) ;
-void	pca9555DIG_OUT_SetState(uint8_t pin, uint8_t State, uint8_t Now) ;
-int32_t	pca9555DIG_OUT_GetState(uint8_t pin) ;
-int32_t	pca9555DIG_OUT_WriteAll(void) ;
+void pca9555DIG_OUT_Config(uint8_t pin) ;
+void pca9555DIG_OUT_SetState(uint8_t pin, uint8_t State, uint8_t Now) ;
+int	pca9555DIG_OUT_GetState(uint8_t pin) ;
+int	pca9555DIG_OUT_WriteAll(void) ;
 void	pca9555DIG_OUT_Toggle(uint8_t pin) ;
 
-int32_t	pca9555Diagnostics(i2c_dev_info_t * psI2C_DI) ;
-int32_t	pca9555Identify(i2c_dev_info_t * psI2C_DI) ;
-int32_t	pca9555Config(i2c_dev_info_t * psI2C_DI) ;
-int32_t	pca9555Check(uint32_t tIntvl) ;
+int	pca9555Diagnostics(i2c_di_t * psI2C_DI) ;
+int	pca9555Identify(i2c_di_t * psI2C_DI) ;
+int	pca9555Config(i2c_di_t * psI2C_DI) ;
+void pca9555ReConfig(i2c_di_t * psI2C_DI) ;
+int	pca9555Check(uint32_t tIntvl) ;
 
 #ifdef __cplusplus
 }
