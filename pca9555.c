@@ -270,11 +270,9 @@ int32_t	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
 #define	pcaCHECK_INTERVAL				(30 * MILLIS_IN_SECOND)
 uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
-int32_t	pca9555Check(uint32_t tIntvl) {
+int	pca9555Check(uint32_t tIntvl) {
 	pcaCheckInterval += pdMS_TO_TICKS(tIntvl) ;
-	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) {
-		return 0 ;
-	}
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) return 0;
 	pca9555ReadRegister(pca9555_IN) ;
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
