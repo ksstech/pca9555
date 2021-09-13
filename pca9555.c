@@ -60,38 +60,41 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 
 // ####################################### Local functions #########################################
 
-int32_t	pca9555ReadRegister(uint8_t Reg) {
+int	pca9555ReadRegister(uint8_t Reg) {
 	IF_PRINT(debugREGISTERS, "READ #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0/2/4/6
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr),
 			(uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL) ;
 }
 
-int32_t	pca9555WriteRegister(uint8_t Reg) {
-	uint8_t	cBuf[3] ;
-	cBuf[0] = Reg << 1 ;						// force to uint16_t boundary 0 / 2 / 4 / 6
-	cBuf[1] = sPCA9555.Regs[Reg] >> 8 ;
-	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF ;
+int	pca9555WriteRegister(uint8_t Reg) {
+	uint8_t	cBuf[3];
+	cBuf[0] = Reg << 1;									// force to uint16_t boundary 0 / 2 / 4 / 6
+	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
+	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
 	IF_PRINT(debugREGISTERS, "WRITE #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
-	return halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (uint8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL) ;
+	IF_SYSTIMER_START(debugTIMING, stPCA9555);
+	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (uint8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
+	IF_SYSTIMER_STOP(debugTIMING, stPCA9555);
+	return iRV;
 }
 
-void	pca9555SetDirection(uint16_t Mask) {
+void pca9555SetDirection(uint16_t Mask) {
 	sPCA9555.Regs[pca9555_CFG] = Mask ;					// 0xFFFF = Inputs, 0x0000 = Outputs
 	pca9555WriteRegister(pca9555_CFG) ;
 }
 
-void	pca9555SetInversion(uint16_t Mask) {
+void pca9555SetInversion(uint16_t Mask) {
 	sPCA9555.Regs[pca9555_POL] = Mask ;					// 0x0000 = normal, 0xFFFF = inverted
 	pca9555WriteRegister(pca9555_POL) ;
 }
 
-void	pca9555SetOutLevel(uint16_t Mask) {
+void pca9555SetOutLevel(uint16_t Mask) {
 	sPCA9555.Regs[pca9555_OUT] = Mask ;					// 0 = OFF, 1 = ON
 	pca9555WriteRegister(pca9555_OUT) ;
 }
 
-void	pca9555Reset(void) {
+void pca9555Reset(void) {
 	pca9555SetOutLevel(0xFFFF) ;
 	pca9555SetInversion(0x0000) ;
 	pca9555SetDirection(0xFFFF) ;
@@ -99,7 +102,7 @@ void	pca9555Reset(void) {
 
 // ###################################### Global functions #########################################
 
-void	pca9555DIG_IN_Config(uint8_t pin) {
+void pca9555DIG_IN_Config(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// To configure as INput, make the bit a '1'
 	sPCA9555.Regs[pca9555_CFG] |= (0x0001 << pin) ;
@@ -114,7 +117,7 @@ uint8_t	pca9555DIG_IN_GetState(uint8_t pin) {
 	return (sPCA9555.Regs[pca9555_IN] & (0x0001 << pin)) ? 1 : 0 ;
 }
 
-void	pca9555DIG_IN_Invert(uint8_t pin) {
+void pca9555DIG_IN_Invert(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// Ensure we are inverting an input pin
 	IF_myASSERT(debugSTATES, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1) ;
@@ -122,47 +125,39 @@ void	pca9555DIG_IN_Invert(uint8_t pin) {
 	pca9555WriteRegister(pca9555_POL) ;
 }
 
-void	pca9555DIG_OUT_Config(uint8_t pin) {
+void pca9555DIG_OUT_Config(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	sPCA9555.Regs[pca9555_CFG] &= ~(1U << pin) ;		// To configure as OUTput, make the bit a '0'
 	pca9555WriteRegister(pca9555_CFG) ;
 }
 
-void	pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
+void pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0) ;
 	uint8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0 ;
-	if (NewState == CurState) {							// state not changed
-		return ;										// then return
-	}
-	if (NewState == 1) {
-		sPCA9555.Regs[pca9555_OUT] |= (1U << pin) ;
-	} else {
-		sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin) ;
-	}
+	if (NewState == CurState) return;
+	if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);
+	else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
+
 	sPCA9555.f_WriteIsDirty = 1 ;						// bit just changed, show as dirty
 	IF_PRINT(debugSTATES, "Pin #%d [%d -> %d]", pin, CurState, NewState) ;
-	if (Now) {
-		pca9555DIG_OUT_WriteAll() ;
-	}
+	if (Now) pca9555DIG_OUT_WriteAll();
 }
 
-int32_t	pca9555DIG_OUT_GetState(uint8_t pin) {
+int	pca9555DIG_OUT_GetState(uint8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0) ;
 	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0 ;
 }
 
-int32_t	pca9555DIG_OUT_WriteAll(void) {
+int	pca9555DIG_OUT_WriteAll(void) {
 	if (sPCA9555.f_WriteIsDirty) {
-		IF_SYSTIMER_START(debugTIMING, stPCA9555) ;
 		pca9555WriteRegister(pca9555_OUT) ;
-		IF_SYSTIMER_STOP(debugTIMING, stPCA9555) ;
 		sPCA9555.f_WriteIsDirty = 0 ;					// show as clean, just written
 		return 1 ;
 	}
 	return 0 ;
 }
 
-void	pca9555DIG_OUT_Toggle(uint8_t pin) {
+void pca9555DIG_OUT_Toggle(uint8_t pin) {
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0) ;
 	sPCA9555.Regs[pca9555_OUT] ^= (1U << pin) ;
 	pca9555WriteRegister(pca9555_OUT) ;
@@ -172,7 +167,7 @@ void	pca9555DIG_OUT_Toggle(uint8_t pin) {
 
 #define	pca9555TEST_INTERVAL			300
 
-int32_t	pca9555Identify(i2c_di_t * psI2C_DI) {
+int	pca9555Identify(i2c_di_t * psI2C_DI) {
 	psI2C_DI->Delay	= pdMS_TO_TICKS(10) ;				// default device timeout
 	psI2C_DI->Test	= 1 ;								// test mode
 	sPCA9555.psI2C 	= psI2C_DI ;
@@ -205,20 +200,20 @@ int32_t	pca9555Identify(i2c_di_t * psI2C_DI) {
 	return erFAILURE ;
 }
 
-int32_t	pca9555Config(i2c_di_t * psI2C_DI) {
+int	pca9555Config(i2c_di_t * psI2C_DI) {
 	pca9555SetDirection(0x0000) ;						// Configure all as OUTputs
 	pca9555SetInversion(0x0000) ;						// polarity NOT inverted
-	IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 30, 3000) ;
+	IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200) ;
 	return erSUCCESS ;
 }
 
-void	pca9555ReConfig(i2c_di_t * psI2C_DI) {
+void pca9555ReConfig(i2c_di_t * psI2C_DI) {
 	pca9555WriteRegister(pca9555_CFG) ;
 	pca9555WriteRegister(pca9555_POL) ;
 	pca9555WriteRegister(pca9555_OUT) ;
 }
 
-int32_t	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
+int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
 	// configure as outputs and display
 	printfx("PCA9555: Default (all Outputs )status\n") ;
 	pca9555SetDirection(0x0000) ;
@@ -284,11 +279,12 @@ int	pca9555Check(uint32_t tIntvl) {
 	}
 	// If not, general reset, reconfigure and start again...
 	halI2C_Recover(sPCA9555.psI2C) ;					// Reset FSM
+	++pcaResetCount;
 	return 1 ;
 }
 
-void	pca9555Report(void) {
-	printfx("PCA9555\t INP=0x%04X  OUT=0x%04X  POL=0x%04X  CFG=0x%04x", sPCA9555.Regs[pca9555_IN],
-			sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL], sPCA9555.Regs[pca9555_CFG]) ;
-	printfx("\tChecks  OK=%d  Fail=%d\n", pcaSuccessCount, pcaResetCount) ;
+void pca9555Report(void) {
+	printfx("\tPCA9555  I=x%04X  O=x%04X  P=x%04X  C=x%04x  OK=%d  Fail=%d\n",
+			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
+			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount) ;
 }
