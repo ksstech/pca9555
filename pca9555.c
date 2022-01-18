@@ -169,8 +169,8 @@ void pca9555DIG_OUT_Toggle(uint8_t pin) {
 #define	pca9555TEST_INTERVAL			300
 
 int	pca9555Identify(i2c_di_t * psI2C_DI) {
-	psI2C_DI->Delay	= 10;			// default device timeout
-	psI2C_DI->TOuS = 400;			// Max 13000 (13mS)
+	psI2C_DI->TRXmS	= 10;			// default device timeout
+	psI2C_DI->CLKuS = 400;			// Max 13000 (13mS)
 	psI2C_DI->Test	= 1;			// test mode
 	sPCA9555.psI2C 	= psI2C_DI;
 
