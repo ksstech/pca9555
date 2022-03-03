@@ -61,7 +61,7 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 // ####################################### Local functions #########################################
 
 int	pca9555ReadRegister(uint8_t Reg) {
-	IF_PRINT(debugREGISTERS, "READ #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
+	IF_P(debugREGISTERS, "READ #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that read and write operations are separately executed
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr),
@@ -73,7 +73,7 @@ int	pca9555WriteRegister(uint8_t Reg) {
 	cBuf[0] = Reg << 1;									// force to uint16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
-	IF_PRINT(debugREGISTERS, "WRITE #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
+	IF_P(debugREGISTERS, "WRITE #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	IF_SYSTIMER_START(debugTIMING, stPCA9555);
 	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (uint8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 	IF_SYSTIMER_STOP(debugTIMING, stPCA9555);
@@ -140,7 +140,7 @@ void pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
 	else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
 
 	sPCA9555.f_WriteIsDirty = 1 ;						// bit just changed, show as dirty
-	IF_PRINT(debugSTATES, "Pin #%d [%d -> %d]", pin, CurState, NewState) ;
+	IF_P(debugSTATES, "Pin #%d [%d -> %d]", pin, CurState, NewState) ;
 	if (Now) pca9555DIG_OUT_WriteAll();
 }
 
@@ -274,7 +274,7 @@ int	pca9555Check(uint32_t tIntvl) {
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
 	TestRead = (TestRead >> 8) | (TestRead << 8) ;
-	IF_PRINT(debugSTATES, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
+	IF_P(debugSTATES, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
 	if (TestRead == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount ;
 		return 0 ;										// all OK, no reset required...
