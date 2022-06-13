@@ -61,7 +61,7 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 // ####################################### Local functions #########################################
 
 int	pca9555ReadRegister(uint8_t Reg) {
-	IF_P(debugREGISTERS, "READ #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
+	IF_P(debugREGISTERS, "READ #%d %s : %016J\r\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that read and write operations are separately executed
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr),
@@ -73,7 +73,7 @@ int	pca9555WriteRegister(uint8_t Reg) {
 	cBuf[0] = Reg << 1;									// force to uint16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
-	IF_P(debugREGISTERS, "WRITE #%d %s : %016J\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
+	IF_P(debugREGISTERS, "WRITE #%d %s : %016J\r\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	IF_SYSTIMER_START(debugTIMING, stPCA9555);
 	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (uint8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 	IF_SYSTIMER_STOP(debugTIMING, stPCA9555);
@@ -217,32 +217,32 @@ void pca9555ReConfig(i2c_di_t * psI2C_DI) {
 
 int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
 	// configure as outputs and display
-	printfx("PCA9555: Default (all Outputs )status\n") ;
+	printfx("PCA9555: Default (all Outputs )status\r\n") ;
 	pca9555SetDirection(0x0000) ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all OFF and display
-	printfx("PCA9555: All outputs (OFF) status\n") ;
+	printfx("PCA9555: All outputs (OFF) status\r\n") ;
 	pca9555SetOutLevel(0x0000) ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all ON and display
-	printfx("PCA9555: All outputs (ON) status\n") ;
+	printfx("PCA9555: All outputs (ON) status\r\n") ;
 	pca9555SetOutLevel(0xFFFF) ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all OFF and display
-	printfx("PCA9555: All outputs (OFF) status\n") ;
+	printfx("PCA9555: All outputs (OFF) status\r\n") ;
 	pca9555SetOutLevel(0x0000) ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// set all back to inputs and display
-	printfx("PCA9555: All Inputs (again) status\n") ;
+	printfx("PCA9555: All Inputs (again) status\r\n") ;
 	pca9555SetDirection(0xFFFF) ;
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 
 	// Change INput to OUTput(0) and turn ON(1)
-	printfx("PCA9555: Config as Outputs 1 by 1, switch ON using SetState\n") ;
+	printfx("PCA9555: Config as Outputs 1 by 1, switch ON using SetState\r\n") ;
 	for (uint8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
 		pca9555DIG_OUT_Config(pin) ;				// default to OFF (0) after config
 		pca9555DIG_OUT_SetState(pin, 1, 1) ;
@@ -250,13 +250,13 @@ int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	printfx("PCA9555: Switch OFF 1 by 1 using TOGGLE\n") ;
+	printfx("PCA9555: Switch OFF 1 by 1 using TOGGLE\r\n") ;
 	for (uint8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
 		pca9555DIG_OUT_Toggle(pin) ;
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 	}
 	pca9555Reset() ;
-	printfx("PCA9555: Diagnostics completed. All LEDs = OFF !!!\n") ;
+	printfx("PCA9555: Diagnostics completed. All LEDs = OFF !!!\r\n") ;
 	return erSUCCESS ;
 }
 
@@ -274,7 +274,7 @@ int	pca9555Check(uint32_t tIntvl) {
 	uint16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
 	TestRead = (TestRead >> 8) | (TestRead << 8) ;
-	IF_P(debugSTATES, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
+	IF_P(debugSTATES, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\r\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
 	if (TestRead == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount ;
 		return 0 ;										// all OK, no reset required...
@@ -286,7 +286,7 @@ int	pca9555Check(uint32_t tIntvl) {
 }
 
 void pca9555Report(void) {
-	printfx("\tPCA9555  I=x%04X  O=x%04X  P=x%04X  C=x%04x  OK=%d  Fail=%d\n",
+	printfx("\tPCA9555  I=x%04X  O=x%04X  P=x%04X  C=x%04x  OK=%d  Fail=%d\r\n",
 			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
 			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount) ;
 }
