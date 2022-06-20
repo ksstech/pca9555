@@ -1,10 +1,10 @@
 /*
- * Copyright 2014-21 Andre M. Maree/KSS Technologies (Pty) Ltd.
+ * pca9555.c
+ * Copyright (c) 2014-22 Andre M. Maree / KSS Technologies (Pty) Ltd.
  */
 
 #include "hal_variables.h"
 #include "pca9555.h"
-
 #include "x_errors_events.h"
 #include "printfx.h"
 #include "syslog.h"
@@ -38,12 +38,12 @@ enum {													// Register index enumeration
 typedef struct __attribute__((packed)) pca9555_s {
 	i2c_di_t *	psI2C ;									// size = 4
 	union {												// size = 8
-		uint16_t		Regs[pca9555_NUM] ;
+		u16_t		Regs[pca9555_NUM] ;
 		struct __attribute__((packed)) {
-			uint16_t	Reg_IN ;
-			uint16_t	Reg_OUT ;
-			uint16_t	Reg_POL ;
-			uint16_t	Reg_CFG ;
+			u16_t	Reg_IN ;
+			u16_t	Reg_OUT ;
+			u16_t	Reg_POL ;
+			u16_t	Reg_CFG ;
 		} ;
 	} ;
 	bool				f_WriteIsDirty ;
@@ -57,35 +57,35 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 
 // ####################################### Local functions #########################################
 
-int	pca9555ReadRegister(uint8_t Reg) {
-	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0/2/4/6
+int	pca9555ReadRegister(u8_t Reg) {
+	u8_t	cChr = Reg << 1 ;							// force to u16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that read and write operations are separately executed
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr),
-			(uint8_t *) &sPCA9555.Regs[Reg], sizeof(uint16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL) ;
+			(u8_t *) &sPCA9555.Regs[Reg], sizeof(u16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL) ;
 }
 
-int	pca9555WriteRegister(uint8_t Reg) {
-	uint8_t	cBuf[3];
-	cBuf[0] = Reg << 1;									// force to uint16_t boundary 0 / 2 / 4 / 6
+int	pca9555WriteRegister(u8_t Reg) {
+	u8_t	cBuf[3];
+	cBuf[0] = Reg << 1;									// force to u16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
 	IF_SYSTIMER_START(debugTIMING, stPCA9555);
-	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (uint8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
+	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 	IF_SYSTIMER_STOP(debugTIMING, stPCA9555);
 	return iRV;
 }
 
-void pca9555SetDirection(uint16_t Mask) {
+void pca9555SetDirection(u16_t Mask) {
 	sPCA9555.Regs[pca9555_CFG] = Mask ;					// 0xFFFF = Inputs, 0x0000 = Outputs
 	pca9555WriteRegister(pca9555_CFG) ;
 }
 
-void pca9555SetInversion(uint16_t Mask) {
+void pca9555SetInversion(u16_t Mask) {
 	sPCA9555.Regs[pca9555_POL] = Mask ;					// 0x0000 = normal, 0xFFFF = inverted
 	pca9555WriteRegister(pca9555_POL) ;
 }
 
-void pca9555SetOutLevel(uint16_t Mask) {
+void pca9555SetOutLevel(u16_t Mask) {
 	sPCA9555.Regs[pca9555_OUT] = Mask ;					// 0 = OFF, 1 = ON
 	pca9555WriteRegister(pca9555_OUT) ;
 }
@@ -98,48 +98,51 @@ void pca9555Reset(void) {
 
 // ###################################### Global functions #########################################
 
-void pca9555DIG_IN_Config(uint8_t pin) {
+void pca9555DIG_IN_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// To configure as INput, make the bit a '1'
 	sPCA9555.Regs[pca9555_CFG] |= (0x0001 << pin) ;
 	pca9555WriteRegister(pca9555_CFG) ;
 }
 
-uint8_t	pca9555DIG_IN_GetState(uint8_t pin) {
+u8_t	pca9555DIG_IN_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// Ensure we are reading an input pin
-	IF_myASSERT(debugSTATES, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1) ;
+	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1) ;
 	pca9555ReadRegister(pca9555_IN) ;
 	return (sPCA9555.Regs[pca9555_IN] & (0x0001 << pin)) ? 1 : 0 ;
 }
 
-void pca9555DIG_IN_Invert(uint8_t pin) {
+void pca9555DIG_IN_Invert(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// Ensure we are inverting an input pin
-	IF_myASSERT(debugSTATES, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1) ;
+	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1) ;
 	sPCA9555.Regs[pca9555_POL] ^= (1U << pin) ;
 	pca9555WriteRegister(pca9555_POL) ;
 }
 
-void pca9555DIG_OUT_Config(uint8_t pin) {
+void pca9555DIG_OUT_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	sPCA9555.Regs[pca9555_CFG] &= ~(1U << pin) ;		// To configure as OUTput, make the bit a '0'
 	pca9555WriteRegister(pca9555_CFG) ;
 }
 
-void pca9555DIG_OUT_SetState(uint8_t pin, uint8_t NewState, uint8_t Now) {
+void pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState, u8_t Now) {
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0) ;
-	uint8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0 ;
-	if (NewState == CurState) return;
-	if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);
-	else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
-
-	sPCA9555.f_WriteIsDirty = 1 ;						// bit just changed, show as dirty
-	IF_P(debugSTATES, "Pin #%d [%d -> %d]", pin, CurState, NewState) ;
-	if (Now) pca9555DIG_OUT_WriteAll();
+	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0 ;
+	if (NewState == CurState)
+		return;
+	if (NewState == 1)
+		sPCA9555.Regs[pca9555_OUT] |= (1U << pin);
+	else
+		sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
+	sPCA9555.f_WriteIsDirty = 1;						// bit just changed, show as dirty
+//	P("Pin #%d [%d -> %d]", pin, CurState, NewState);
+	if (Now)
+		pca9555DIG_OUT_WriteAll();
 }
 
-int	pca9555DIG_OUT_GetState(uint8_t pin) {
+int	pca9555DIG_OUT_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0) ;
 	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0 ;
 }
@@ -153,7 +156,7 @@ int	pca9555DIG_OUT_WriteAll(void) {
 	return 0 ;
 }
 
-void pca9555DIG_OUT_Toggle(uint8_t pin) {
+void pca9555DIG_OUT_Toggle(u8_t pin) {
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0) ;
 	sPCA9555.Regs[pca9555_OUT] ^= (1U << pin) ;
 	pca9555WriteRegister(pca9555_OUT) ;
@@ -180,7 +183,7 @@ int	pca9555Identify(i2c_di_t * psI2C_DI) {
 	if ((sPCA9555.Regs[pca9555_CFG] == 0xFFFF) &&
 		(sPCA9555.Regs[pca9555_POL] == 0x0000)) {
 		// passed phase 1, now step 4
-		uint16_t OrigOUT = sPCA9555.Regs[pca9555_OUT] ;
+		u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT] ;
 		pca9555SetDirection(0x0000) ;					// all OUTputs
 		pca9555ReadRegister(pca9555_OUT) ;
 		if (sPCA9555.Regs[pca9555_OUT] == OrigOUT) {
@@ -238,7 +241,7 @@ int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
 
 	// Change INput to OUTput(0) and turn ON(1)
 	printfx("PCA9555: Config as Outputs 1 by 1, switch ON using SetState\r\n") ;
-	for (uint8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
+	for (u8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
 		pca9555DIG_OUT_Config(pin) ;				// default to OFF (0) after config
 		pca9555DIG_OUT_SetState(pin, 1, 1) ;
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
@@ -246,7 +249,7 @@ int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
 	printfx("PCA9555: Switch OFF 1 by 1 using TOGGLE\r\n") ;
-	for (uint8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
+	for (u8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
 		pca9555DIG_OUT_Toggle(pin) ;
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL)) ;
 	}
@@ -260,16 +263,17 @@ int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
  * to at regular intervals check that the PCA9555 can be read and that the value read back corresponds
  * with the last value written. If not, FSM of I2C peripheral on the ESP32 must be reset completely */
 #define	pcaCHECK_INTERVAL				(30 * MILLIS_IN_SECOND)
-uint32_t	pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
+u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval ;
 
-int	pca9555Check(uint32_t tIntvl) {
+int	pca9555Check(u32_t tIntvl) {
 	pcaCheckInterval += pdMS_TO_TICKS(tIntvl) ;
-	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl)) return 0;
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl))
+		return 0;
 	pca9555ReadRegister(pca9555_IN) ;
-	uint16_t TestRead	= sPCA9555.Reg_IN ;
+	u16_t TestRead	= sPCA9555.Reg_IN ;
 	TestRead = ~TestRead ;
 	TestRead = (TestRead >> 8) | (TestRead << 8) ;
-	IF_P(debugSTATES, "PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\r\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
+//	P("PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\r\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT) ;
 	if (TestRead == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount ;
 		return 0 ;										// all OK, no reset required...
