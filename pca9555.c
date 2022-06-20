@@ -2,18 +2,15 @@
  * Copyright 2014-21 Andre M. Maree/KSS Technologies (Pty) Ltd.
  */
 
-#include	"hal_variables.h"
-#include	"pca9555.h"
+#include "hal_variables.h"
+#include "pca9555.h"
 
-#include	"x_errors_events.h"
-#include	"printfx.h"
-#include	"syslog.h"
-#include	"systiming.h"
+#include "x_errors_events.h"
+#include "printfx.h"
+#include "syslog.h"
+#include "systiming.h"
 
 #define	debugFLAG					0xF000
-
-#define	debugREGISTERS				(debugFLAG & 0x0001)
-#define	debugSTATES					(debugFLAG & 0x0002)
 
 #define	debugTIMING					(debugFLAG_GLOBAL & debugFLAG & 0x1000)
 #define	debugTRACK					(debugFLAG_GLOBAL & debugFLAG & 0x2000)
@@ -61,7 +58,6 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 // ####################################### Local functions #########################################
 
 int	pca9555ReadRegister(uint8_t Reg) {
-	IF_P(debugREGISTERS, "READ #%d %s : %016J\r\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	uint8_t	cChr = Reg << 1 ;							// force to uint16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that read and write operations are separately executed
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr),
@@ -73,7 +69,6 @@ int	pca9555WriteRegister(uint8_t Reg) {
 	cBuf[0] = Reg << 1;									// force to uint16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
-	IF_P(debugREGISTERS, "WRITE #%d %s : %016J\r\n", Reg, DS9555RegNames[Reg], sPCA9555.Regs[Reg]) ;
 	IF_SYSTIMER_START(debugTIMING, stPCA9555);
 	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (uint8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 	IF_SYSTIMER_STOP(debugTIMING, stPCA9555);
