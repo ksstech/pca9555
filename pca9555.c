@@ -58,8 +58,8 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" } 
 // ####################################### Local functions #########################################
 
 int	pca9555ReadRegister(u8_t Reg) {
-	u8_t	cChr = Reg << 1 ;							// force to u16_t boundary 0/2/4/6
-	// Adding a delay of 0mS ensure that read and write operations are separately executed
+	u8_t cChr = Reg << 1;								// force to u16_t boundary 0/2/4/6
+	// Adding a delay of 0mS ensure that write & read operations are separately executed
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr),
 			(u8_t *) &sPCA9555.Regs[Reg], sizeof(u16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL) ;
 }
@@ -105,7 +105,7 @@ void pca9555DIG_IN_Config(u8_t pin) {
 	pca9555WriteRegister(pca9555_CFG) ;
 }
 
-u8_t	pca9555DIG_IN_GetState(u8_t pin) {
+u8_t pca9555DIG_IN_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS) ;
 	// Ensure we are reading an input pin
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1) ;
