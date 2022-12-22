@@ -4,7 +4,7 @@ set( srcs "pca9555.c" )
 set( include_dirs "." )
 set( priv_include_dirs )
 set( requires )
-set( priv_requires common driver hal_esp32 printfx syslog systiming )
+set( priv_requires common hal_esp32 printfx syslog systiming )
 				
 idf_component_register(
 	SRCS ${srcs} 
