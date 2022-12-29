@@ -4,6 +4,7 @@
  */
 
 #include "hal_variables.h"
+#if (halHAS_PCA9555 > 0)
 #include "pca9555.h"
 #include "x_errors_events.h"
 #include "printfx.h"
@@ -289,3 +290,4 @@ void pca9555Report(void) {
 			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
 			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount) ;
 }
+#endif
