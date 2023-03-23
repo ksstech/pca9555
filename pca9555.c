@@ -286,8 +286,9 @@ int	pca9555Check(u32_t tIntvl) {
 }
 
 void pca9555Report(void) {
-	printfx("\tPCA9555  I=0x%04hX  O=0x%04hX  P=0x%04hX  C=0x%04hx  OK=%ld  Fail=%ld\r\n",
+	halI2C_DeviceReport((void *) sPCA9555.psI2C);
+	printfx("Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu\r\n\n",
 			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
-			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount) ;
+			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount);
 }
 #endif
