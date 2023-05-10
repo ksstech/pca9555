@@ -4,7 +4,7 @@
 
 #pragma		once
 
-#include	"hal_i2c.h"									// +x_struct_union +stdint
+#include	"hal_i2cm.h"									// +x_struct_union +stdint
 
 #ifdef __cplusplus
 extern "C" {
