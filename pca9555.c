@@ -285,10 +285,11 @@ int	pca9555Check(u32_t tIntvl) {
 	return 1;
 }
 
-void pca9555Report(void) {
-	halI2C_DeviceReport((void *) sPCA9555.psI2C);
-	printfx("Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu\r\n\n",
+int pca9555Report(report_t * psR) {
+	int iRV = halI2C_DeviceReport(psR, (void *) sPCA9555.psI2C);
+	iRV += wprintfx(psR, "Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu\r\n\n",
 			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
 			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount);
+	return iRV;
 }
 #endif
