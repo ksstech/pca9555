@@ -21,7 +21,7 @@
 
 // ########################################## MACROS ###############################################
 
-#define	pca9555ADDR_LOW				0x20		// default with A2 A1 A0 all '0'
+#define	pca9555ADDR_LOW				0x20				// default with A2 A1 A0 all '0'
 #define	pca9555ADDR_HIGH			0x27
 #define	pca9555NUM_PINS				16
 
@@ -105,8 +105,7 @@ void pca9555Reset(void) {
 
 void pca9555DIG_IN_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	// To configure as INput, make the bit a '1'
-	sPCA9555.Regs[pca9555_CFG] |= (0x0001 << pin);
+	sPCA9555.Regs[pca9555_CFG] |= (1 << pin);			// To configure as INput, make the bit a '1'
 	pca9555WriteRegister(pca9555_CFG);
 }
 
