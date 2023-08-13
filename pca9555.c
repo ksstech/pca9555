@@ -57,6 +57,10 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 pca9555_t	sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
+#if (cmakePLTFRM == HW_AC00 || cmakePLTFRM == HW_AC01)
+u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
+#endif
+
 // ####################################### Local functions #########################################
 
 int	pca9555ReadRegister(u8_t Reg) {
@@ -162,6 +166,8 @@ void pca9555DIG_OUT_Toggle(u8_t pin) {
 	sPCA9555.Regs[pca9555_OUT] ^= (1U << pin);
 	pca9555WriteRegister(pca9555_OUT);
 }
+
+void pca9555Init(void) { pca9555SetDirection(pca9555Cfg); }
 
 // ################################## Diagnostics functions ########################################
 
