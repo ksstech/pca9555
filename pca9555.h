@@ -2,9 +2,9 @@
  * Copyright 2014-23 Andre M. Maree/KSS Technologies (Pty) Ltd.
  */
 
-#pragma		once
+#pragma once
 
-#include	"hal_i2cm.h"									// +x_struct_union +stdint
+#include "hal_i2c_common.h"
 
 #ifdef __cplusplus
 extern "C" {
