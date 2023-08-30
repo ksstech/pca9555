@@ -172,11 +172,11 @@ void pca9555Init(void) { pca9555SetDirection(pca9555Cfg); }
 
 #define	pca9555TEST_INTERVAL			300
 
-int	pca9555Identify(i2c_di_t * psI2C_DI) {
-	psI2C_DI->TRXmS	= 10;			// default device timeout
-	psI2C_DI->CLKuS = 400;			// Max 13000 (13mS)
-	psI2C_DI->Test	= 1;			// test mode
-	sPCA9555.psI2C 	= psI2C_DI;
+int	pca9555Identify(i2c_di_t * psI2C) {
+	psI2C->TRXmS	= 10;			// default device timeout
+	psI2C->CLKuS = 400;			// Max 13000 (13mS)
+	psI2C->Test	= 1;			// test mode
+	sPCA9555.psI2C 	= psI2C;
 
 	// Step 1 - ensure all set to defaults
 	pca9555SetDirection(0xFFFF);						// default
@@ -193,33 +193,36 @@ int	pca9555Identify(i2c_di_t * psI2C_DI) {
 		pca9555SetDirection(0x0000);					// all OUTputs
 		pca9555ReadRegister(pca9555_OUT);
 		if (sPCA9555.Regs[pca9555_OUT] == OrigOUT) {
-			psI2C_DI->Type		= i2cDEV_PCA9555;
+			psI2C->Type		= i2cDEV_PCA9555;
 			// 3 bytes = 300uS @ 100Khz, 75uS @ 400Khz
-			psI2C_DI->Speed		= i2cSPEED_400;
-			psI2C_DI->DevIdx 	= 0;
-			psI2C_DI->Test		= 0;
+			psI2C->Speed		= i2cSPEED_400;
+			psI2C->DevIdx 	= 0;
+			psI2C->Test		= 0;
 			return erSUCCESS;
 		}
 	}
-	psI2C_DI->Test	= 0;
+	psI2C->Test	= 0;
 	sPCA9555.psI2C 	= NULL;
 	return erFAILURE;
 }
 
-int	pca9555Config(i2c_di_t * psI2C_DI) {
-	pca9555SetDirection(0x0000);						// Configure all as OUTputs
-	pca9555SetInversion(0x0000);						// polarity NOT inverted
+int	pca9555Config(i2c_di_t * psI2C) {
 	IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
-	return erSUCCESS;
+	int iRV = pca9555ReConfig(psI2C);
+	if (iRV > erFAILURE) xEventGroupSetBits(EventDevices, devMASK_PCA9555);
+	return iRV;
 }
 
-void pca9555ReConfig(i2c_di_t * psI2C_DI) {
+int pca9555ReConfig(i2c_di_t * psI2C) {
+	pca9555SetDirection(0x0000);						// Configure all as OUTputs
+	pca9555SetInversion(0x0000);						// polarity NOT inverted
 	pca9555WriteRegister(pca9555_CFG);
 	pca9555WriteRegister(pca9555_POL);
 	pca9555WriteRegister(pca9555_OUT);
+	return erSUCCESS;
 }
 
-int	pca9555Diagnostics(i2c_di_t * psI2C_DI) {
+int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	// configure as outputs and display
 	printfx("PCA9555: Default (all Outputs )status\r\n");
 	pca9555SetDirection(0x0000);
