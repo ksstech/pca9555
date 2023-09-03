@@ -66,7 +66,7 @@ u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
 int	pca9555ReadRegister(u8_t Reg) {
 	u8_t cChr = Reg << 1;								// force to u16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that write & read operations are separately executed
-	return halI2CM_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr), (u8_t *) &sPCA9555.Regs[Reg], sizeof(u16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
+	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr), (u8_t *) &sPCA9555.Regs[Reg], sizeof(u16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 }
 
 int	pca9555WriteRegister(u8_t Reg) {
@@ -75,7 +75,7 @@ int	pca9555WriteRegister(u8_t Reg) {
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
 	IF_SYSTIMER_START(debugTIMING, stPCA9555);
-	int iRV = halI2CM_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
+	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 	IF_SYSTIMER_STOP(debugTIMING, stPCA9555);
 	return iRV;
 }
