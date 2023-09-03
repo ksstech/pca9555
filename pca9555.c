@@ -282,11 +282,13 @@ int	pca9555Check(u32_t tIntvl) {
 	u16_t TestRead	= sPCA9555.Reg_IN;
 	TestRead = ~TestRead;
 	TestRead = (TestRead >> 8) | (TestRead << 8);
-//	P("PCA9555  Rd=0x%04x  Adj=0x%04x  Wr=0x%04x\r\n", sPCA9555.Reg_IN, TestRead, sPCA9555.Reg_OUT);
 	if (TestRead == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount;
 		return 0;										// all OK, no reset required...
 	}
+	// Determine bits that are wrong
+	u16_t ErrorBits = TestRead ^ sPCA9555.Reg_OUT;
+	SL_WARN("PCA9555  Rin=x%04X  Rout=x%04X  Test=x%04X  Error=x%04x\r\n", sPCA9555.Reg_IN, sPCA9555.Reg_OUT, TestRead, ErrorBits);
 	// If not, general reset, reconfigure and start again...
 	halI2C_DeviceReconfig(sPCA9555.psI2C);				// Reset FSM
 	++pcaResetCount;
