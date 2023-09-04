@@ -59,6 +59,7 @@ const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
 #if (cmakePLTFRM == HW_AC00 || cmakePLTFRM == HW_AC01)
 u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
+u16_t pca9555Inv = 0b0000000000000000;					// all NON inverted
 #endif
 
 // ####################################### Local functions #########################################
@@ -166,8 +167,6 @@ void pca9555DIG_OUT_Toggle(u8_t pin) {
 	pca9555WriteRegister(pca9555_OUT);
 }
 
-void pca9555Init(void) { pca9555SetDirection(pca9555Cfg); }
-
 // ################################## Diagnostics functions ########################################
 
 #define	pca9555TEST_INTERVAL			300
@@ -214,8 +213,8 @@ int	pca9555Config(i2c_di_t * psI2C) {
 }
 
 int pca9555ReConfig(i2c_di_t * psI2C) {
-	pca9555SetDirection(0x0000);						// Configure all as OUTputs
-	pca9555SetInversion(0x0000);						// polarity NOT inverted
+	pca9555SetDirection(pca9555Cfg);
+	pca9555SetInversion(pca9555Inv);
 	pca9555WriteRegister(pca9555_CFG);
 	pca9555WriteRegister(pca9555_POL);
 	pca9555WriteRegister(pca9555_OUT);

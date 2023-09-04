@@ -32,8 +32,6 @@ int	pca9555DIG_OUT_GetState(u8_t pin);
 int	pca9555DIG_OUT_WriteAll(void);
 void pca9555DIG_OUT_Toggle(u8_t pin);
 
-void pca9555Init(void);
-
 int	pca9555Diagnostics(i2c_di_t * psI2C);
 int	pca9555Identify(i2c_di_t * psI2C);
 int	pca9555Config(i2c_di_t * psI2C);
