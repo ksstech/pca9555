@@ -48,7 +48,7 @@ typedef struct __attribute__((packed)) pca9555_s {
 			u16_t	Reg_CFG;
 		};
 	};
-	bool				f_WriteIsDirty;
+	bool f_Dirty ;
 } pca9555_t;
 DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 
@@ -132,33 +132,24 @@ void pca9555DIG_OUT_Config(u8_t pin) {
 	pca9555WriteRegister(pca9555_CFG);
 }
 
-void pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState, u8_t Now) {
+void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
-	if (NewState == CurState)
-		return;
-	if (NewState == 1)
-		sPCA9555.Regs[pca9555_OUT] |= (1U << pin);
-	else
-		sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
-	sPCA9555.f_WriteIsDirty = 1;						// bit just changed, show as dirty
-//	P("Pin #%d [%d -> %d]", pin, CurState, NewState);
-	if (Now)
-		pca9555DIG_OUT_WriteAll();
+	if (NewState != CurState) {
+		if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);
+		else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
+		sPCA9555.f_Dirty = 1;						// bit just changed, show as dirty
+	}
+}
+
+void pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
+	pca9555DIG_OUT_SetStateLazy(pin, NewState);
+	if (sPCA9555.f_Dirty) pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
 }
 
 int	pca9555DIG_OUT_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0;
-}
-
-int	pca9555DIG_OUT_WriteAll(void) {
-	if (sPCA9555.f_WriteIsDirty) {
-		pca9555WriteRegister(pca9555_OUT);
-		sPCA9555.f_WriteIsDirty = 0;					// show as clean, just written
-		return 1;
-	}
-	return 0;
 }
 
 void pca9555DIG_OUT_Toggle(u8_t pin) {
