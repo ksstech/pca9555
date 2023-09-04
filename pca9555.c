@@ -182,9 +182,7 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 
 int	pca9555Config(i2c_di_t * psI2C) {
 	IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
-	int iRV = pca9555ReConfig(psI2C);
-	if (iRV > erFAILURE) xEventGroupSetBits(EventDevices, devMASK_PCA9555);
-	return iRV;
+	return pca9555ReConfig(psI2C);
 }
 
 int pca9555ReConfig(i2c_di_t * psI2C) {
