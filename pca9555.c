@@ -148,9 +148,9 @@ void pca9555DIG_OUT_WriteAll(void) { if (sPCA9555.f_Dirty) pca9555WriteRegVal(pc
 #define	pca9555TEST_INTERVAL			300
 
 int	pca9555Identify(i2c_di_t * psI2C) {
-	psI2C->TRXmS	= 10;			// default device timeout
-	psI2C->CLKuS = 400;			// Max 13000 (13mS)
-	psI2C->Test	= 1;			// test mode
+	psI2C->TRXmS = 10;									// default device timeout
+	psI2C->CLKuS = 400;									// Max 13000 (13mS)
+	psI2C->Test	= 1;									// test mode
 	sPCA9555.psI2C 	= psI2C;
 
 	// Step 1 - ensure all set to defaults
@@ -161,23 +161,22 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	for (int r = pca9555_IN; r < pca9555_NUM; pca9555ReadRegister(r++));
 
 	// Step 3 - Check initial default values
-	if ((sPCA9555.Regs[pca9555_CFG] == 0xFFFF) &&
-		(sPCA9555.Regs[pca9555_POL] == 0x0000)) {
+	if ((sPCA9555.Regs[pca9555_CFG] == 0xFFFF) && (sPCA9555.Regs[pca9555_POL] == 0x0000)) {
 		// passed phase 1, now step 4
 		u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];
 		pca9555WriteRegVal(pca9555_CFG, 0x0000);		// all OUTputs
 		pca9555ReadRegister(pca9555_OUT);
 		if (sPCA9555.Regs[pca9555_OUT] == OrigOUT) {
-			psI2C->Type		= i2cDEV_PCA9555;
+			psI2C->Type = i2cDEV_PCA9555;
 			// 3 bytes = 300uS @ 100Khz, 75uS @ 400Khz
-			psI2C->Speed		= i2cSPEED_400;
-			psI2C->DevIdx 	= 0;
-			psI2C->Test		= 0;
+			psI2C->Speed = i2cSPEED_400;
+			psI2C->DevIdx = 0;
+			psI2C->Test = 0;
 			return erSUCCESS;
 		}
 	}
 	psI2C->Test	= 0;
-	sPCA9555.psI2C 	= NULL;
+	sPCA9555.psI2C = NULL;
 	return erFAILURE;
 }
 
