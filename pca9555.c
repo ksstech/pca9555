@@ -64,7 +64,7 @@ u16_t pca9555Inv = 0b0000000000000000;					// all NON inverted
 
 // ####################################### Local functions #########################################
 
-int	pca9555ReadRegister(u8_t Reg) {
+static int pca9555ReadRegister(u8_t Reg) {
 	u8_t cChr = Reg << 1;								// force to u16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that write & read operations are separately executed
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr), (u8_t *) &sPCA9555.Regs[Reg], sizeof(u16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
