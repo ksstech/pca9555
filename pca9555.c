@@ -241,7 +241,7 @@ int	pca9555Diagnostics(i2c_di_t * psI2C) {
 
 /* Due to an induced reverse voltage cause by the collapsing magnetic field of the solenoid in the
  * door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
- * to at regular intervals check that the PCA9555 can be read and that the value read back corresponds
+ * to check that the PCA9555 can be read and that the value read back corresponds
  * with the last value written. If not, FSM of I2C peripheral on the ESP32 must be reset completely */
 #define	pcaCHECK_INTERVAL				(30 * MILLIS_IN_SECOND)
 u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
@@ -251,16 +251,15 @@ int	pca9555Check(u32_t tIntvl) {
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) >= pdMS_TO_TICKS(tIntvl))
 		return 0;
 	pca9555ReadRegister(pca9555_IN);
-	u16_t TestRead	= sPCA9555.Reg_IN;
+	u16_t TestRead = sPCA9555.Reg_IN;
 	TestRead = ~TestRead;
 	TestRead = (TestRead >> 8) | (TestRead << 8);
-	if (TestRead == sPCA9555.Reg_OUT) {
-		++pcaSuccessCount;
-		return 0;										// all OK, no reset required...
-	}
+
+	if (TestRead == sPCA9555.Reg_OUT) { ++pcaSuccessCount; return 0; }	// all OK, no reset required...
+
 	// Determine bits that are wrong
 	u16_t ErrorBits = TestRead ^ sPCA9555.Reg_OUT;
-	SL_WARN("PCA9555  Rin=x%04X  Rout=x%04X  Test=x%04X  Error=x%04x\r\n", sPCA9555.Reg_IN, sPCA9555.Reg_OUT, TestRead, ErrorBits);
+	SL_ERR("Rin=x%04X  Rout=x%04X  Test=x%04X  Error=x%04x", sPCA9555.Reg_IN, sPCA9555.Reg_OUT, TestRead, ErrorBits);
 	// If not, general reset, reconfigure and start again...
 	halI2C_DeviceReconfig(sPCA9555.psI2C);				// Reset FSM
 	++pcaResetCount;
