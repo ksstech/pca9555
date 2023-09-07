@@ -186,12 +186,12 @@ int	pca9555Config(i2c_di_t * psI2C) {
 }
 
 int pca9555ReConfig(i2c_di_t * psI2C) {
-	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);
-	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_POL, pca9555Pol);
-	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_OUT, pca9555Out);
-	if (iRV > erFAILURE) xEventGroupSetBits(EventDevices, devMASK_PCA9555);
-	else xEventGroupClearBits(EventDevices, devMASK_PCA9555);
-	return erSUCCESS;
+	xEventGroupClearBits(EventDevices, devMASK_PCA9555);					// 0 Out of action
+	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);					// 1 IN vs OUT
+	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_POL, pca9555Pol);		// 2 Non Invert
+	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_OUT, pca9555Out);		// 3 All OUTputs
+	if (iRV > erFAILURE) xEventGroupSetBits(EventDevices, devMASK_PCA9555);	// 4 Flag as OK
+	return iRV;																// 5 return status
 }
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
