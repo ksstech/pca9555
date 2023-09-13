@@ -1,10 +1,8 @@
 /*
- * Copyright 2014-23 Andre M. Maree/KSS Technologies (Pty) Ltd.
+ * pca9555.h - Copyright (c) 2014-23 Andre M. Maree/KSS Technologies (Pty) Ltd.
  */
 
 #pragma once
-
-#include "hal_i2c_common.h"
 
 #ifdef __cplusplus
 extern "C" {

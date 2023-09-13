@@ -1,12 +1,11 @@
 /*
- * pca9555.c
- * Copyright (c) 2014-22 Andre M. Maree / KSS Technologies (Pty) Ltd.
+ * pca9555.c - Copyright (c) 2014-23 Andre M. Maree / KSS Technologies (Pty) Ltd.
  */
 
 #include "hal_variables.h"
 
 #if (halHAS_PCA9555 > 0)
-#include "pca9555.h"
+#include "hal_i2c_common.h"
 #include "x_errors_events.h"
 #include "printfx.h"
 #include "syslog.h"
@@ -190,7 +189,7 @@ int pca9555ReConfig(i2c_di_t * psI2C) {
 	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);					// 1 IN vs OUT
 	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_POL, pca9555Pol);		// 2 Non Invert
 	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_OUT, pca9555Out);		// 3 All OUTputs
-	if (iRV > erFAILURE) xEventGroupSetBits(EventDevices, devMASK_PCA9555);	// 4 Flag as OK
+	if (iRV > erFAILURE) xRtosSetDevice(devMASK_PCA9555);					// 4 Flag as OK
 	return iRV;																// 5 return status
 }
 
