@@ -214,17 +214,24 @@ exit:
 }
 
 int	pca9555Config(i2c_di_t * psI2C) {
-	IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
-	return pca9555ReConfig(psI2C);
-}
+	if (!psI2C->IDok) return erINV_STATE;
 
-int pca9555ReConfig(i2c_di_t * psI2C) {
-	xEventGroupClearBits(EventDevices, devMASK_PCA9555);					// 0 Out of action
-	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);					// 1 IN vs OUT
-	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_POL, pca9555Pol);		// 2 Non Invert
-	if (iRV > erFAILURE) pca9555WriteRegVal(pca9555_OUT, pca9555Out);		// 3 All OUTputs
-	if (iRV > erFAILURE) xRtosSetDevice(devMASK_PCA9555);					// 4 Flag as OK
-	return iRV;																// 5 return status
+	psI2C->CFGok = 0;
+	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
+	if (iRV < erSUCCESS) goto exit;
+
+	iRV = pca9555WriteRegVal(pca9555_POL, pca9555Pol);	// Non Invert
+	if (iRV < erSUCCESS) goto exit;
+
+	iRV = pca9555WriteRegVal(pca9555_OUT, pca9555Out);	// All OUTputs
+	if (iRV < erSUCCESS) goto exit;
+
+	psI2C->CFGok = 1;
+	// once off init....
+	if (!psI2C->CFGerr)
+		IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
+exit:
+	return iRV;
 }
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
