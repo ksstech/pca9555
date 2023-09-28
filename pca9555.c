@@ -181,36 +181,36 @@ int	pca9555Check(void) {
 #define	pca9555TEST_INTERVAL			300
 
 int	pca9555Identify(i2c_di_t * psI2C) {
-	psI2C->TRXmS = 10;									// default device timeout
-	psI2C->CLKuS = 400;									// Max 13000 (13mS)
-	psI2C->Test	= 1;									// test mode
-	sPCA9555.psI2C 	= psI2C;
-
+	sPCA9555.psI2C = psI2C;
+	psI2C->Type = i2cDEV_PCA9555;
+	psI2C->Speed = i2cSPEED_400;
+	psI2C->TObus = 25;
+	psI2C->Test	= 1;
 	// Step 1 - ensure all set to defaults
-	pca9555WriteRegVal(pca9555_POL, 0x0000);			// default polarity non inverted/normal
-	pca9555WriteRegVal(pca9555_CFG, 0xFFFF);			// default all Inputs
+	int iRV = pca9555WriteRegVal(pca9555_POL, 0);					// default non inverted/normal
+	if (iRV < erSUCCESS) goto exit;
 
+	iRV = pca9555WriteRegVal(pca9555_CFG, 0xFFFF);	// default all Inputs
+	if (iRV < erSUCCESS) goto exit;
 	// Step 2 - read all registers
-	for (int r = pca9555_IN; r < pca9555_NUM; pca9555ReadRegister(r++));
-
-	// Step 3 - Check initial default values
-	if ((sPCA9555.Regs[pca9555_CFG] == 0xFFFF) && (sPCA9555.Regs[pca9555_POL] == 0x0000)) {
-		// passed phase 1, now step 4
-		u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];
-		pca9555WriteRegVal(pca9555_CFG, 0x0000);		// all OUTputs
-		pca9555ReadRegister(pca9555_OUT);
-		if (sPCA9555.Regs[pca9555_OUT] == OrigOUT) {
-			psI2C->Type = i2cDEV_PCA9555;
-			// 3 bytes = 300uS @ 100Khz, 75uS @ 400Khz
-			psI2C->Speed = i2cSPEED_400;
-			psI2C->DevIdx = 0;
-			psI2C->Test = 0;
-			return erSUCCESS;
-		}
+	for (int r = pca9555_IN; r < pca9555_NUM; ++r) {
+		 iRV = pca9555ReadRegister(r);
+		 if (iRV < erSUCCESS) goto exit;
 	}
+	// Step 3 - Check initial default values
+	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF) goto err_whoami;
+
+	u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];			// passed phase 1, now step 4
+	pca9555WriteRegVal(pca9555_CFG, 0);					// all OUTputs
+	pca9555ReadRegister(pca9555_OUT);
+	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT) goto err_whoami;
+	psI2C->IDok = 1;
 	psI2C->Test	= 0;
-	sPCA9555.psI2C = NULL;
-	return erFAILURE;
+	goto exit;
+err_whoami:
+	iRV = erINV_WHOAMI;
+exit:
+	return iRV;
 }
 
 int	pca9555Config(i2c_di_t * psI2C) {
