@@ -14,6 +14,7 @@ extern "C" {
 
 // ######################################### Structures ############################################
 
+struct i2c_di_t;
 
 // ####################################### Public variables ########################################
 
@@ -27,15 +28,14 @@ void pca9555DIG_IN_Invert(u8_t pin);
 void pca9555DIG_OUT_Config(u8_t pin);
 void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t State);
 void pca9555DIG_OUT_SetState(u8_t pin, u8_t State);
+int pca9555DIG_OUT_WriteAll(void);
 int	pca9555DIG_OUT_GetState(u8_t pin);
-void pca9555DIG_OUT_WriteAll(void);
 void pca9555DIG_OUT_Toggle(u8_t pin);
 
-int	pca9555Diagnostics(i2c_di_t * psI2C);
-int	pca9555Identify(i2c_di_t * psI2C);
-int	pca9555Config(i2c_di_t * psI2C);
-int pca9555ReConfig(i2c_di_t * psI2C);
-int	pca9555Check(u32_t tIntvl);
+int	pca9555Diagnostics(struct i2c_di_t * psI2C);
+int	pca9555Identify(struct i2c_di_t * psI2C);
+int	pca9555Config(struct i2c_di_t * psI2C);
+int	pca9555Check(void);
 
 int pca9555Report(report_t * psR);
 

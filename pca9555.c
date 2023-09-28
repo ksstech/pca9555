@@ -2,11 +2,12 @@
  * pca9555.c - Copyright (c) 2014-23 Andre M. Maree / KSS Technologies (Pty) Ltd.
  */
 
-#include "hal_variables.h"
+#include "hal_config.h"
 
 #if (halHAS_PCA9555 > 0)
 #include "hal_i2c_common.h"
 #include "x_errors_events.h"
+#include "pca9555.h"
 #include "printfx.h"
 #include "syslog.h"
 #include "systiming.h"
@@ -53,7 +54,7 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 
 // ######################################### Local variables #######################################
 
-pca9555_t	sPCA9555 = { 0 };
+pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
 #if (cmakePLTFRM == HW_AC00 || cmakePLTFRM == HW_AC01)
@@ -116,11 +117,12 @@ void pca9555DIG_OUT_Config(u8_t pin) {
 }
 
 void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
-	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0);
+	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
+	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
-		if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);
-		else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);
+		if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);	// set to 1
+		else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);				// clear to 0
 		sPCA9555.f_Dirty = 1;						// bit just changed, show as dirty
 	}
 }
@@ -272,4 +274,5 @@ int pca9555Report(report_t * psR) {
 			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount);
 	return iRV;
 }
+
 #endif
