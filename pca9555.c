@@ -132,6 +132,11 @@ void pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
 	if (sPCA9555.f_Dirty) pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
 }
 
+int pca9555DIG_OUT_WriteAll(void) {
+	if (sPCA9555.f_Dirty) { pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]); return 1; }
+	return 0;
+}
+
 int	pca9555DIG_OUT_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0;
@@ -141,8 +146,6 @@ void pca9555DIG_OUT_Toggle(u8_t pin) {
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0);
 	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT] ^ (1U << pin));
 }
-
-void pca9555DIG_OUT_WriteAll(void) { if (sPCA9555.f_Dirty) pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]); }
 
 // ################################## Diagnostics functions ########################################
 
