@@ -57,7 +57,7 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
-#if (cmakePLTFRM == HW_AC00 || cmakePLTFRM == HW_AC01)
+#if (buildPLTFRM == HW_AC00 || buildPLTFRM == HW_AC01)
 const u16_t pca9555Out = 0b0000000000000000;					// all 0=OFF
 const u16_t pca9555Pol = 0b0000000000000000;					// all NON inverted
 const u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
@@ -163,9 +163,9 @@ int	pca9555Check(void) {
 
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t TestRead = sPCA9555.Reg_IN;
-	#if (cmakePLTFRM == HW_AC00)
+	#if (buildPLTFRM == HW_AC00)
 	TestRead = (TestRead >> 8) | (TestRead << 8);
-	#elif (cmakePLTFRM == HW_AC01)
+	#elif (buildPLTFRM == HW_AC01)
 //	TestRead = ~TestRead;
 	TestRead = (TestRead >> 8) | (TestRead << 8);
 	#endif
