@@ -4,7 +4,7 @@
 
 #include "hal_config.h"
 
-#if (halHAS_PCA9555 > 0)
+#if (HAL_PCA9555 > 0)
 #include "hal_i2c_common.h"
 #include "x_errors_events.h"
 #include "pca9555.h"
