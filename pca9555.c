@@ -2,7 +2,7 @@
  * pca9555.c - Copyright (c) 2014-24 Andre M. Maree / KSS Technologies (Pty) Ltd.
  */
 
-#include "hal_config.h"
+#include "hal_platform.h"
 
 #if (HAL_PCA9555 > 0)
 #include "hal_i2c_common.h"
