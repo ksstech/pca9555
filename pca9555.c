@@ -239,32 +239,32 @@ exit:
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	// configure as outputs and display
-	printfx("PCA9555: Default (all Outputs )status\r\n");
+	wprintfx(NULL, "PCA9555: Default (all Outputs )status\r\n");
 	pca9555WriteRegVal(pca9555_CFG, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	printfx("PCA9555: All outputs (OFF) status\r\n");
+	wprintfx(NULL, "PCA9555: All outputs (OFF) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all ON and display
-	printfx("PCA9555: All outputs (ON) status\r\n");
+	wprintfx(NULL, "PCA9555: All outputs (ON) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0xFFFF);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	printfx("PCA9555: All outputs (OFF) status\r\n");
+	wprintfx(NULL, "PCA9555: All outputs (OFF) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all back to inputs and display
-	printfx("PCA9555: All Inputs (again) status\r\n");
+	wprintfx(NULL, "PCA9555: All Inputs (again) status\r\n");
 	pca9555WriteRegVal(pca9555_CFG, 0xFFFF);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// Change INput to OUTput(0) and turn ON(1)
-	printfx("PCA9555: Config as Outputs 1 by 1, switch ON using SetState\r\n");
+	wprintfx(NULL, "PCA9555: Config as Outputs 1 by 1, switch ON using SetState\r\n");
 	for (u8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
 		pca9555DIG_OUT_Config(pin);				// default to OFF (0) after config
 		pca9555DIG_OUT_SetState(pin, 1);
@@ -272,13 +272,13 @@ int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	printfx("PCA9555: Switch OFF 1 by 1 using TOGGLE\r\n");
+	wprintfx(NULL, "PCA9555: Switch OFF 1 by 1 using TOGGLE\r\n");
 	for (u8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
 		pca9555DIG_OUT_Toggle(pin);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
 	pca9555Reset();
-	printfx("PCA9555: Diagnostics completed. All LEDs = OFF !!!\r\n");
+	wprintfx(NULL, "PCA9555: Diagnostics completed. All LEDs = OFF !!!\r\n");
 	return erSUCCESS;
 }
 
