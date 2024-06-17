@@ -169,22 +169,22 @@ int	pca9555Check(void) {
 		return 0;
 
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
-	u16_t TestRead = sPCA9555.Reg_IN;
-	#if (buildPLTFRM == HW_AC00)
-	TestRead = (TestRead >> 8) | (TestRead << 8);
-	#elif (buildPLTFRM == HW_AC01)
-//	TestRead = ~TestRead;
-	TestRead = (TestRead >> 8) | (TestRead << 8);
-	#endif
-	if (TestRead == sPCA9555.Reg_OUT) { ++pcaSuccessCount; return 0; }	// all OK, no reset required...
+	u16_t RegInInv = sPCA9555.Reg_IN;
+#if (buildPLTFRM == HW_AC00 || buildPLTFRM == HW_AC01)
+	RegInInv = (RegInInv >> 8) | (RegInInv << 8);
+#endif
+	if (RegInInv == sPCA9555.Reg_OUT) {
+		++pcaSuccessCount;								// all OK, no reset required...
+		return 0; 
+	}
 
-	u16_t ErrorBits = TestRead ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
-	SL_ERR("Rin=x%04X  Rout=x%04X  Test=x%04X  Error=x%04x (OK=%lu Err=%lu)", sPCA9555.Reg_IN,
-			sPCA9555.Reg_OUT, TestRead, ErrorBits, pcaSuccessCount, pcaResetCount);
-	// If not, general reset, reconfigure and start again...
+	++pcaResetCount;
+	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
+	SL_ERR("Rin=x%04X Rout=x%04X Error=x%04X (OK=%lu Err=%lu)", RegInInv,
+			sPCA9555.Reg_OUT, ErrorBits, pcaSuccessCount, pcaResetCount);
+	// general reset, reconfigure and start again...
 	++sPCA9555.psI2C->CFGerr;
 	halI2C_DeviceConfig(sPCA9555.psI2C);				// General Reset FSM, reconfigure
-	++pcaResetCount;
 	return 1;
 }
 
