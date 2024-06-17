@@ -76,7 +76,8 @@ static int pca9555WriteRegVal(u8_t Reg, u16_t Val) {
 	cBuf[1] = Val >> 8;
 	cBuf[2] = Val & 0xFF;
 	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
-	if (iRV == erSUCCESS && Reg == pca9555_OUT) sPCA9555.f_Dirty = 0;		// show as clean, just written
+	if (iRV == erSUCCESS && Reg == pca9555_OUT)
+		sPCA9555.f_Dirty = 0;							// show as clean, just written
 	return iRV;
 }
 
@@ -98,7 +99,8 @@ u8_t pca9555DIG_IN_GetState(u8_t pin) {
 	// Ensure we are reading an input pin
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1);
 	int iRV = pca9555ReadRegister(pca9555_IN);
-	if (iRV == erSUCCESS) return (sPCA9555.Regs[pca9555_IN] & (0x0001 << pin)) ? 1 : 0;
+	if (iRV == erSUCCESS)
+		return (sPCA9555.Regs[pca9555_IN] & (0x0001 << pin)) ? 1 : 0;
 	xSyslogError(__FUNCTION__, iRV);
 	return 0;
 }
@@ -119,19 +121,25 @@ void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
-		if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);	// set to 1
-		else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);				// clear to 0
+		if (NewState == 1)
+			sPCA9555.Regs[pca9555_OUT] |= (1U << pin);	// set to 1
+		else
+			sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);	// clear to 0
 		sPCA9555.f_Dirty = 1;						// bit just changed, show as dirty
 	}
 }
 
 void pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
 	pca9555DIG_OUT_SetStateLazy(pin, NewState);
-	if (sPCA9555.f_Dirty) pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
+	if (sPCA9555.f_Dirty)
+		pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
 }
 
 int pca9555DIG_OUT_WriteAll(void) {
-	if (sPCA9555.f_Dirty) { pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]); return 1; }
+	if (sPCA9555.f_Dirty) {
+		pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
+		return 1;
+	}
 	return 0;
 }
 
@@ -157,7 +165,8 @@ u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
 int	pca9555Check(void) {
 	++pcaCheckInterval;
-	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0) return 0;
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
+		return 0;
 
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t TestRead = sPCA9555.Reg_IN;
@@ -189,80 +198,79 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	psI2C->Test	= 1;
 	// Step 1 - ensure all set to defaults
 	int iRV = pca9555WriteRegVal(pca9555_POL, 0);					// default non inverted/normal
-	if (iRV < erSUCCESS) goto exit;
-
+	if (iRV < erSUCCESS)
+		return iRV;
 	iRV = pca9555WriteRegVal(pca9555_CFG, 0xFFFF);	// default all Inputs
-	if (iRV < erSUCCESS) goto exit;
+	if (iRV < erSUCCESS)
+		return iRV;
 	// Step 2 - read all registers
 	for (int r = pca9555_IN; r < pca9555_NUM; ++r) {
 		 iRV = pca9555ReadRegister(r);
-		 if (iRV < erSUCCESS) goto exit;
+		 if (iRV < erSUCCESS) {
+			return iRV;
+		 }
 	}
 	// Step 3 - Check initial default values
-	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF) goto err_whoami;
-
+	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF)
+		return erINV_WHOAMI;
 	u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];			// passed phase 1, now step 4
 	pca9555WriteRegVal(pca9555_CFG, 0);					// all OUTputs
 	pca9555ReadRegister(pca9555_OUT);
-	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT) goto err_whoami;
+	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)
+		return erINV_WHOAMI;
 	psI2C->IDok = 1;
 	psI2C->Test	= 0;
-	goto exit;
-err_whoami:
-	iRV = erINV_WHOAMI;
-exit:
 	return iRV;
 }
 
 int	pca9555Config(i2c_di_t * psI2C) {
-	if (!psI2C->IDok) return erINV_STATE;
-
+	if (!psI2C->IDok)
+		return erINV_STATE;
 	psI2C->CFGok = 0;
 	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
-	if (iRV < erSUCCESS) goto exit;
-
+	if (iRV < erSUCCESS)
+		return iRV;
 	iRV = pca9555WriteRegVal(pca9555_POL, pca9555Pol);	// Non Invert
-	if (iRV < erSUCCESS) goto exit;
-
+	if (iRV < erSUCCESS)
+		return iRV;
 	iRV = pca9555WriteRegVal(pca9555_OUT, pca9555Out);	// All OUTputs
-	if (iRV < erSUCCESS) goto exit;
-
+	if (iRV < erSUCCESS)
+		return iRV;
 	psI2C->CFGok = 1;
 	// once off init....
 	if (!psI2C->CFGerr)
 		IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
-exit:
 	return iRV;
 }
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	// configure as outputs and display
-	wprintfx(NULL, "PCA9555: Default (all Outputs )status\r\n");
+	wprintfx(NULL, "Default (all Outputs )status\r\n");
 	pca9555WriteRegVal(pca9555_CFG, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	wprintfx(NULL, "PCA9555: All outputs (OFF) status\r\n");
+	wprintfx(NULL, "All outputs (OFF) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all ON and display
-	wprintfx(NULL, "PCA9555: All outputs (ON) status\r\n");
+	wprintfx(NULL, "All outputs (ON) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0xFFFF);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	wprintfx(NULL, "PCA9555: All outputs (OFF) status\r\n");
+	wprintfx(NULL, "All outputs (OFF) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all back to inputs and display
-	wprintfx(NULL, "PCA9555: All Inputs (again) status\r\n");
+	wprintfx(NULL, "All Inputs (again) status\r\n");
 	pca9555WriteRegVal(pca9555_CFG, 0xFFFF);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// Change INput to OUTput(0) and turn ON(1)
-	wprintfx(NULL, "PCA9555: Config as Outputs 1 by 1, switch ON using SetState\r\n");
+	wprintfx(NULL, "Config as Outputs 1 by 1, switch ON using SetState\r\n");
 	for (u8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
 		pca9555DIG_OUT_Config(pin);				// default to OFF (0) after config
 		pca9555DIG_OUT_SetState(pin, 1);
@@ -270,13 +278,13 @@ int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	wprintfx(NULL, "PCA9555: Switch OFF 1 by 1 using TOGGLE\r\n");
+	wprintfx(NULL, "Switch OFF 1 by 1 using TOGGLE\r\n");
 	for (u8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
 		pca9555DIG_OUT_Toggle(pin);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
 	pca9555Reset();
-	wprintfx(NULL, "PCA9555: Diagnostics completed. All LEDs = OFF !!!\r\n");
+	wprintfx(NULL, "Diagnostics completed. All LEDs = OFF !!!\r\n");
 	return erSUCCESS;
 }
 
