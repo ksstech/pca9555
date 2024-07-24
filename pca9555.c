@@ -38,7 +38,7 @@ enum {													// Register index enumeration
 typedef struct __attribute__((packed)) pca9555_s {
 	i2c_di_t *	psI2C;									// size = 4
 	union {												// size = 8
-		u16_t		Regs[pca9555_NUM];
+		u16_t Regs[pca9555_NUM];
 		struct __attribute__((packed)) {
 			u16_t	Reg_IN;
 			u16_t	Reg_OUT;
@@ -46,7 +46,7 @@ typedef struct __attribute__((packed)) pca9555_s {
 			u16_t	Reg_CFG;
 		};
 	};
-	bool f_Dirty ;
+	bool f_Dirty;
 } pca9555_t;
 DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 
@@ -55,7 +55,7 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
-#if (buildPLTFRM == HW_AC00 || buildPLTFRM == HW_AC01)
+#if (buildPLTFRM == HW_AC01)
 const u16_t pca9555Out = 0b0000000000000000;					// all 0=OFF
 const u16_t pca9555Pol = 0b0000000000000000;					// all NON inverted
 const u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
@@ -119,6 +119,10 @@ void pca9555DIG_OUT_Config(u8_t pin) {
 void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
+#if (buildPLTFRM == HW_AC01)
+	if (pin < 8 && anySYSFLAGS(hwAC00))					// AC00 pins 0->7
+		pin = 7 - pin;									// map to pins 7->0 on AC01
+#endif
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
 		if (NewState == 1)
@@ -156,10 +160,10 @@ void pca9555DIG_OUT_Toggle(u8_t pin) {
 // ################################## Diagnostics functions ########################################
 
 
-/* Due to an induced reverse voltage cause by the collapsing magnetic field of the solenoid in the
- * door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
- * to check that the PCA9555 can be read and that the value read back corresponds
- * with the last value written. If not, FSM of I2C peripheral on the ESP32 must be reset completely */
+// Due to an induced reverse voltage cause by the collapsing magnetic field of the solenoid in the
+// door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
+// to check that the PCA9555 can be read and that the value read back corresponds
+// with the last value written. If not, FSM of I2C peripheral on the ESP32 must be reset completely
 #define	pcaCHECK_INTERVAL	2
 u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
@@ -167,17 +171,15 @@ int	pca9555Check(void) {
 	++pcaCheckInterval;
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
 		return 0;
-
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t RegInInv = sPCA9555.Reg_IN;
-#if (buildPLTFRM == HW_AC00 || buildPLTFRM == HW_AC01)
+#if (buildPLTFRM == HW_AC01)
 	RegInInv = (RegInInv >> 8) | (RegInInv << 8);
 #endif
 	if (RegInInv == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount;								// all OK, no reset required...
 		return 0; 
 	}
-
 	++pcaResetCount;
 	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
 	SL_ERR("Rin=x%04X Rout=x%04X Error=x%04X (OK=%lu Err=%lu)", RegInInv,
