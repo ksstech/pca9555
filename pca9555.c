@@ -189,7 +189,7 @@ int	pca9555Check(void) {
 			sPCA9555.Reg_OUT, ErrorBits, pcaSuccessCount, pcaResetCount);
 	// general reset, reconfigure and start again...
 	++sPCA9555.psI2C->CFGerr;
-	halI2C_DeviceConfig(sPCA9555.psI2C);				// General Reset FSM, reconfigure
+	halI2C_ErrorHandler(sPCA9555.psI2C,__FUNCTION__, ESP_ERR_INVALID_STATE); // error code chosen to force FSM reset
 	return 1;
 }
 
