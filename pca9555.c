@@ -232,6 +232,7 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	if (!psI2C->IDok)
 		return erINV_STATE;
 	psI2C->CFGok = 0;
+	xRtosClearDevice(devMASK_PCA9555);
 	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
 	if (iRV < erSUCCESS)
 		return iRV;
@@ -242,6 +243,7 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	if (iRV < erSUCCESS)
 		return iRV;
 	psI2C->CFGok = 1;
+	xRtosSetDevice(devMASK_PCA9555);
 	// once off init....
 	if (!psI2C->CFGerr)
 		IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
