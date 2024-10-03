@@ -91,14 +91,16 @@ void pca9555Reset(void) {
 
 void pca9555DIG_IN_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8)
+		pin = 7 - pin;									// AC01 pins 0->7 map to 7->0 on AC00
 	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] | (1 << pin));	// 1 = Input
 }
 
 u8_t pca9555DIG_IN_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// Ensure we are reading an input pin
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8)
+		pin = 7 - pin;									// AC01 pins 0->7 map to 7->0 on AC00
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1);
 	int iRV = pca9555ReadRegister(pca9555_IN);
 	if (iRV == erSUCCESS)
