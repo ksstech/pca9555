@@ -174,8 +174,7 @@ u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
 int	pca9555Check(void) {
 	++pcaCheckInterval;
-	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
-		return 0;
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0) return 0;
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t RegInInv = sPCA9555.Reg_IN;
 #if (buildPLTFRM == HW_AC01)
@@ -187,11 +186,9 @@ int	pca9555Check(void) {
 	}
 	++pcaResetCount;
 	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
-	SL_ERR("Rin=x%04X Rout=x%04X Error=x%04X (OK=%lu Err=%lu)", RegInInv,
-			sPCA9555.Reg_OUT, ErrorBits, pcaSuccessCount, pcaResetCount);
+	SL_ERR("Rin=x%04X Rout=x%04X Error=x%04X (OK=%lu Err=%lu)", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaSuccessCount, pcaResetCount);
 	// general reset, reconfigure and start again...
-	++sPCA9555.psI2C->CFGerr;
-	halI2C_ErrorHandler(sPCA9555.psI2C,__FUNCTION__, ESP_ERR_INVALID_STATE); // error code chosen to force FSM reset
+	halI2C_ErrorHandler(sPCA9555.psI2C, __FUNCTION__, ESP_ERR_INVALID_STATE); // error code chosen to force FSM reset
 	return 1;
 }
 
