@@ -91,7 +91,7 @@ void pca9555Reset(void) {
 
 void pca9555DIG_IN_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8)
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8)
 		pin = 7 - pin;									// AC01 pins 0->7 map to 7->0 on AC00
 	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] | (1 << pin));	// 1 = Input
 }
@@ -99,7 +99,7 @@ void pca9555DIG_IN_Config(u8_t pin) {
 u8_t pca9555DIG_IN_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// Ensure we are reading an input pin
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8)
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8)
 		pin = 7 - pin;									// AC01 pins 0->7 map to 7->0 on AC00
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1);
 	int iRV = pca9555ReadRegister(pca9555_IN);
@@ -111,20 +111,20 @@ u8_t pca9555DIG_IN_GetState(u8_t pin) {
 
 void pca9555DIG_IN_Invert(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1);	// ensure INPUT pin
 	pca9555WriteRegVal(pca9555_POL, sPCA9555.Regs[pca9555_POL] ^ (1U << pin));
 }
 
 void pca9555DIG_OUT_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
 	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] & ~(1U << pin));
 }
 
 void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
 	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
@@ -151,13 +151,13 @@ int pca9555DIG_OUT_WriteAll(void) {
 }
 
 int	pca9555DIG_OUT_GetState(u8_t pin) {
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0;
 }
 
 void pca9555DIG_OUT_Toggle(u8_t pin) {
-	if (buildPLTFRM == HW_AC01 && anySYSFLAGS(hwAC00) && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
+	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin; // AC01 pins 0->7 map to 7->0 on AC00
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0);
 	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT] ^ (1U << pin));
 }
@@ -231,7 +231,7 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	if (!psI2C->IDok)
 		return erINV_STATE;
 	psI2C->CFGok = 0;
-	xRtosClearDevice(devMASK_PCA9555);
+	halEventUpdateDevice(devMASK_PCA9555, 0);
 	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
 	if (iRV < erSUCCESS)
 		return iRV;
@@ -242,7 +242,7 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	if (iRV < erSUCCESS)
 		return iRV;
 	psI2C->CFGok = 1;
-	xRtosSetDevice(devMASK_PCA9555);
+	halEventUpdateDevice(devMASK_PCA9555, 1);
 	// once off init....
 	if (!psI2C->CFGerr)
 		IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
