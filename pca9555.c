@@ -210,9 +210,7 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	// Step 2 - read all registers
 	for (int r = pca9555_IN; r < pca9555_NUM; ++r) {
 		 iRV = pca9555ReadRegister(r);
-		 if (iRV < erSUCCESS) {
-			return iRV;
-		 }
+		 if (iRV < erSUCCESS)						return iRV;
 	}
 	// Step 3 - Check initial default values
 	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF)
@@ -220,8 +218,7 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];			// passed phase 1, now step 4
 	pca9555WriteRegVal(pca9555_CFG, 0);					// all OUTputs
 	pca9555ReadRegister(pca9555_OUT);
-	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)
-		return erINV_WHOAMI;
+	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)		return erINV_WHOAMI;
 	psI2C->IDok = 1;
 	psI2C->Test	= 0;
 	return iRV;
@@ -233,19 +230,15 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	psI2C->CFGok = 0;
 	halEventUpdateDevice(devMASK_PCA9555, 0);
 	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
-	if (iRV < erSUCCESS)
-		return iRV;
+	if (iRV < erSUCCESS)							return iRV;
 	iRV = pca9555WriteRegVal(pca9555_POL, pca9555Pol);	// Non Invert
-	if (iRV < erSUCCESS)
-		return iRV;
+	if (iRV < erSUCCESS)							return iRV;
 	iRV = pca9555WriteRegVal(pca9555_OUT, pca9555Out);	// All OUTputs
-	if (iRV < erSUCCESS)
-		return iRV;
+	if (iRV < erSUCCESS)							return iRV;
 	psI2C->CFGok = 1;
 	halEventUpdateDevice(devMASK_PCA9555, 1);
 	// once off init....
-	if (!psI2C->CFGerr)
-		IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
+	if (!psI2C->CFGerr) IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
 	return iRV;
 }
 
