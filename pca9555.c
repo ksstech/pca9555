@@ -46,7 +46,7 @@ typedef struct __attribute__((packed)) pca9555_s {
 			u16_t	Reg_CFG;
 		};
 	};
-	bool f_Dirty;
+	bool fDirty;
 } pca9555_t;
 DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 
@@ -122,33 +122,29 @@ void pca9555DIG_OUT_Config(u8_t pin) {
 	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] & ~(1U << pin));
 }
 
-void pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
+bool pca9555DIG_OUT_WriteAll(void) {
+	if (sPCA9555.fDirty == 0) return 0;
+	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
+	return 1;
+}
+
+bool pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// AC01 pins 0->7 map to 7->0 on AC00
 	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
-		if (NewState == 1)
-			sPCA9555.Regs[pca9555_OUT] |= (1U << pin);	// set to 1
-		else
-			sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);	// clear to 0
-		sPCA9555.f_Dirty = 1;						// bit just changed, show as dirty
+		if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);		// set to 1
+		else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);					// clear to 0
+		sPCA9555.fDirty = 1;							// bit just changed, show as dirty
 	}
+	return sPCA9555.fDirty;							// buffer might be dirty from an earlier change
 }
 
-void pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
+bool pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
 	pca9555DIG_OUT_SetStateLazy(pin, NewState);
-	if (sPCA9555.f_Dirty)
-		pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
-}
-
-int pca9555DIG_OUT_WriteAll(void) {
-	if (sPCA9555.f_Dirty) {
-		pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
-		return 1;
-	}
-	return 0;
+	return pca9555DIG_OUT_WriteAll();
 }
 
 int	pca9555DIG_OUT_GetState(u8_t pin) {
@@ -180,9 +176,8 @@ int	pca9555Check(void) {
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0) return 0;
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t RegInInv = sPCA9555.Reg_IN;
-#if (buildPLTFRM == HW_AC01)
-	RegInInv = (RegInInv >> 8) | (RegInInv << 8);
-#endif
+	// AMM not sure the logic behind this....
+	if (buildPLTFRM == HW_AC01) RegInInv = (RegInInv >> 8) | (RegInInv << 8);
 	if (RegInInv == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount;								// all OK, no reset required...
 		return 0; 
