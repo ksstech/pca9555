@@ -55,7 +55,7 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
-#if (buildPLTFRM == HW_AC01)									// defaults for both AC00/1
+#if (appPLTFRM == HW_AC01)									// defaults for both AC00/1
 const u16_t pca9555Out = 0b0000000000000000;					// all 0=OFF
 const u16_t pca9555Pol = 0b0000000000000000;					// all NON inverted
 const u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
@@ -91,14 +91,14 @@ void pca9555Reset(void) {
 void pca9555DIG_IN_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] | (1 << pin));	// 1 = Input
 }
 
 u8_t pca9555DIG_IN_GetState(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1);
 	int iRV = pca9555ReadRegister(pca9555_IN);
 	if (iRV == erSUCCESS)
@@ -110,7 +110,7 @@ u8_t pca9555DIG_IN_GetState(u8_t pin) {
 void pca9555DIG_IN_Invert(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1);	// ensure INPUT pin
 	pca9555WriteRegVal(pca9555_POL, sPCA9555.Regs[pca9555_POL] ^ (1U << pin));
 }
@@ -118,7 +118,7 @@ void pca9555DIG_IN_Invert(u8_t pin) {
 void pca9555DIG_OUT_Config(u8_t pin) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] & ~(1U << pin));
 }
 
@@ -131,7 +131,7 @@ bool pca9555DIG_OUT_WriteAll(void) {
 bool pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
@@ -149,14 +149,14 @@ bool pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
 
 int	pca9555DIG_OUT_GetState(u8_t pin) {
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0;
 }
 
 void pca9555DIG_OUT_Toggle(u8_t pin) {
 	// AC01 pins 0->7 map to 7->0 on AC00
-	if (buildPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
+	if (appPLTFRM == HW_AC01 && sSysFlags.ac00 && pin < 8) pin = 7 - pin;
 	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0);
 	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT] ^ (1U << pin));
 }
@@ -177,7 +177,7 @@ int	pca9555Check(void) {
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t RegInInv = sPCA9555.Reg_IN;
 	// AMM not sure the logic behind this....
-	if (buildPLTFRM == HW_AC01) RegInInv = (RegInInv >> 8) | (RegInInv << 8);
+	if (appPLTFRM == HW_AC01) RegInInv = (RegInInv >> 8) | (RegInInv << 8);
 	if (RegInInv == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount;								// all OK, no reset required...
 		return 0; 
