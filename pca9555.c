@@ -206,7 +206,7 @@ int	pca9555Check(void) {
 	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
 	SL_ERR("Rin=x%04X Rout=x%04X Error=x%04X (OK=%lu Err=%lu)", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaSuccessCount, pcaResetCount);
 	// general reset, reconfigure and start again...
-	halI2C_ErrorHandler(sPCA9555.psI2C, __FUNCTION__, ESP_ERR_INVALID_STATE); // error code chosen to force FSM reset
+	halI2C_ErrorHandler(sPCA9555.psI2C, __FUNCTION__, ESP_FAIL);	/* error code chosen to force FSM reset */
 	return 1;
 }
 
