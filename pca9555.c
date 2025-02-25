@@ -76,7 +76,8 @@ static int pca9555WriteRegVal(u8_t Reg, u16_t Val) {
 	cBuf[1] = Val >> 8;
 	cBuf[2] = Val & 0xFF;
 	int iRV = halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
-	if (Reg == pca9555_OUT && iRV == erSUCCESS) sPCA9555.fDirty = 0;	// show as clean, just written
+	if (Reg == pca9555_OUT && iRV == erSUCCESS)
+		sPCA9555.fDirty = 0;							// show as clean, just written
 	return iRV;
 }
 
@@ -123,7 +124,8 @@ void pca9555DIG_OUT_Config(u8_t pin) {
 }
 
 bool pca9555DIG_OUT_WriteAll(void) {
-	if (sPCA9555.fDirty == 0) return 0;
+	if (sPCA9555.fDirty == 0)
+		return 0;
 	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
 	return 1;
 }
@@ -135,8 +137,10 @@ bool pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
 	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
 	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
 	if (NewState != CurState) {
-		if (NewState == 1) sPCA9555.Regs[pca9555_OUT] |= (1U << pin);		// set to 1
-		else sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);					// clear to 0
+		if (NewState == 1)
+			sPCA9555.Regs[pca9555_OUT] |= (1U << pin);		// set to 1
+		else
+			sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);					// clear to 0
 		sPCA9555.fDirty = 1;							// bit just changed, show as dirty
 	}
 	return sPCA9555.fDirty;							// buffer might be dirty from an earlier change
@@ -173,11 +177,13 @@ u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
 int	pca9555Check(void) {
 	++pcaCheckInterval;
-	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0) return 0;
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
+		return 0;
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t RegInInv = sPCA9555.Reg_IN;
 	// AMM not sure the logic behind this....
-	if (appPLTFRM == HW_AC01) RegInInv = (RegInInv >> 8) | (RegInInv << 8);
+	if (appPLTFRM == HW_AC01)
+		RegInInv = (RegInInv >> 8) | (RegInInv << 8);
 	if (RegInInv == sPCA9555.Reg_OUT) {
 		++pcaSuccessCount;								// all OK, no reset required...
 		return 0; 
@@ -208,7 +214,8 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	// Step 2 - read all registers
 	for (int r = pca9555_IN; r < pca9555_NUM; ++r) {
 		 iRV = pca9555ReadRegister(r);
-		 if (iRV < erSUCCESS)						return iRV;
+		 if (iRV < erSUCCESS)
+		 	return iRV;
 	}
 	// Step 3 - Check initial default values
 	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF)
@@ -216,7 +223,8 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];			// passed phase 1, now step 4
 	pca9555WriteRegVal(pca9555_CFG, 0);					// all OUTputs
 	pca9555ReadRegister(pca9555_OUT);
-	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)		return erINV_WHOAMI;
+	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)
+		return erINV_WHOAMI;
 	psI2C->IDok = 1;
 	psI2C->Test	= 0;
 	return iRV;
@@ -228,15 +236,19 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	psI2C->CFGok = 0;
 	halEventUpdateDevice(devMASK_PCA9555, 0);
 	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
-	if (iRV < erSUCCESS)							return iRV;
+	if (iRV < erSUCCESS)
+		return iRV;
 	iRV = pca9555WriteRegVal(pca9555_POL, pca9555Pol);	// Non Invert
-	if (iRV < erSUCCESS)							return iRV;
+	if (iRV < erSUCCESS)
+		return iRV;
 	iRV = pca9555WriteRegVal(pca9555_OUT, pca9555Out);	// All OUTputs
-	if (iRV < erSUCCESS)							return iRV;
+	if (iRV < erSUCCESS)
+		return iRV;
 	psI2C->CFGok = 1;
 	halEventUpdateDevice(devMASK_PCA9555, 1);
 	// once off init....
-	if (!psI2C->CFGerr) IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
+	if (psI2C->CFGerr == 0)
+		IF_SYSTIMER_INIT(debugTIMING, stPCA9555, stMICROS, "PCA9555", 200, 3200);
 	return iRV;
 }
 
