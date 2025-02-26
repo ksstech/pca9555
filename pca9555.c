@@ -204,7 +204,7 @@ int	pca9555Check(void) {
 	}
 	++pcaResetCount;
 	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
-	SL_ERR("Rin=x%04X Rout=x%04X Error=x%04X (OK=%lu Err=%lu)", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaSuccessCount, pcaResetCount);
+	SL_ERR("Rin=x%04hX Rout=x%04hX Diff=x%04hX Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaResetCount, pcaSuccessCount);
 	// general reset, reconfigure and start again...
 	halI2C_ErrorHandler(sPCA9555.psI2C, __FUNCTION__, ESP_FAIL);	/* error code chosen to force FSM reset */
 	return 1;
@@ -245,7 +245,7 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 }
 
 int	pca9555Config(i2c_di_t * psI2C) {
-	if (!psI2C->IDok)
+	if (psI2C->IDok == 0)
 		return erINV_STATE;
 	psI2C->CFGok = 0;
 	halEventUpdateDevice(devMASK_PCA9555, 0);
