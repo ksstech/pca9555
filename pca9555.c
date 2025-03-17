@@ -69,7 +69,7 @@ static int pca9555ReadRegister(u8_t Reg) {
 	return halI2C_Queue(sPCA9555.psI2C, i2cWDR_FB, &cChr, sizeof(cChr), (u8_t *) &sPCA9555.Regs[Reg], sizeof(u16_t), (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 }
 
-static int pca9555WriteRegVal(u8_t Reg, u16_t Val) {
+static int pca9555WriteRegister(u8_t Reg, u16_t Val) {
 	sPCA9555.Regs[Reg] = Val;
 	u8_t cBuf[3];
 	cBuf[0] = Reg << 1;									// force to u16_t boundary 0 / 2 / 4 / 6
@@ -82,9 +82,9 @@ static int pca9555WriteRegVal(u8_t Reg, u16_t Val) {
 }
 
 void pca9555Reset(void) {
-	pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);
-	pca9555WriteRegVal(pca9555_POL, pca9555Pol);
-	pca9555WriteRegVal(pca9555_OUT, pca9555Out);
+	pca9555WriteRegister(pca9555_CFG, pca9555Cfg);
+	pca9555WriteRegister(pca9555_POL, pca9555Pol);
+	pca9555WriteRegister(pca9555_OUT, pca9555Out);
 }
 
 // ###################################### Global functions #########################################
@@ -219,10 +219,10 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	psI2C->TObus = 25;
 	psI2C->Test	= 1;
 	// Step 1 - ensure all set to defaults
-	int iRV = pca9555WriteRegVal(pca9555_POL, 0);					// default non inverted/normal
+	int iRV = pca9555WriteRegister(pca9555_POL, 0);		// default non inverted/normal
 	if (iRV < erSUCCESS)
 		return iRV;
-	iRV = pca9555WriteRegVal(pca9555_CFG, 0xFFFF);	// default all Inputs
+	iRV = pca9555WriteRegister(pca9555_CFG, 0xFFFF);	// default all Inputs
 	if (iRV < erSUCCESS)
 		return iRV;
 	// Step 2 - read all registers
@@ -235,7 +235,7 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF)
 		return erINV_WHOAMI;
 	u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];			// passed phase 1, now step 4
-	pca9555WriteRegVal(pca9555_CFG, 0);					// all OUTputs
+	pca9555WriteRegister(pca9555_CFG, 0);				// all OUTputs
 	pca9555ReadRegister(pca9555_OUT);
 	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)
 		return erINV_WHOAMI;
@@ -249,13 +249,13 @@ int	pca9555Config(i2c_di_t * psI2C) {
 		return erINV_STATE;
 	psI2C->CFGok = 0;
 	halEventUpdateDevice(devMASK_PCA9555, 0);
-	int iRV = pca9555WriteRegVal(pca9555_CFG, pca9555Cfg);	// IN vs OUT
+	int iRV = pca9555WriteRegister(pca9555_CFG, pca9555Cfg);	// IN vs OUT
 	if (iRV < erSUCCESS)
 		return iRV;
-	iRV = pca9555WriteRegVal(pca9555_POL, pca9555Pol);	// Non Invert
+	iRV = pca9555WriteRegister(pca9555_POL, pca9555Pol);	// Non Invert
 	if (iRV < erSUCCESS)
 		return iRV;
-	iRV = pca9555WriteRegVal(pca9555_OUT, pca9555Out);	// All OUTputs
+	iRV = pca9555WriteRegister(pca9555_OUT, pca9555Out);	// All OUTputs
 	if (iRV < erSUCCESS)
 		return iRV;
 	psI2C->CFGok = 1;
@@ -268,28 +268,28 @@ int	pca9555Config(i2c_di_t * psI2C) {
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	// configure as outputs and display
-	pca9555WriteRegVal(pca9555_CFG, 0x0000);
 	wprintfx(NULL, "Default (all Outputs )status" strNL);
+	pca9555WriteRegister(pca9555_CFG, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	pca9555WriteRegVal(pca9555_OUT, 0x0000);
 	wprintfx(NULL, "All outputs (OFF) status" strNL);
+	pca9555WriteRegister(pca9555_OUT, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all ON and display
-	pca9555WriteRegVal(pca9555_OUT, 0xFFFF);
 	wprintfx(NULL, "All outputs (ON) status" strNL);
+	pca9555WriteRegister(pca9555_OUT, 0xFFFF);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	pca9555WriteRegVal(pca9555_OUT, 0x0000);
 	wprintfx(NULL, "All outputs (OFF) status" strNL);
+	pca9555WriteRegister(pca9555_OUT, 0x0000);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all back to inputs and display
-	pca9555WriteRegVal(pca9555_CFG, 0xFFFF);
 	wprintfx(NULL, "All Inputs (again) status" strNL);
+	pca9555WriteRegister(pca9555_CFG, 0xFFFF);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// Change INput to OUTput(0) and turn ON(1)
