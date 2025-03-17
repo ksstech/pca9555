@@ -221,6 +221,7 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	if (iRV < erSUCCESS)
 		return iRV;
 	psI2C->CFGok = 1;
+	sPCA9555.fDirty = 0;
 	halEventUpdateDevice(devMASK_PCA9555, 1);
 	// once off init....
 	if (psI2C->CFGerr == 0)
