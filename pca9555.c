@@ -255,17 +255,17 @@ int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// Change INput to OUTput(0) and turn ON(1)
-	for (u8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
-		pca9555DIG_OUT_Config(pin);				// default to OFF (0) after config
-		pca9555DIG_OUT_SetState(pin, 1);
 	wprintfx(NULL, "Config as Outputs 1 by 1, switch ON using SetState" strNL);
+	for (u8_t Pin = 0; Pin < pca9555NUM_PINS; Pin++) {
+		pca9555Direction(Pin, 0);					// default to OFF (0) after config
+		pca9555SetState(Pin, 1);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	for (u8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
-		pca9555DIG_OUT_Toggle(pin);
 	wprintfx(NULL, "Switch OFF 1 by 1 using TOGGLE" strNL);
+	for (u8_t Pin = 0; Pin < pca9555NUM_PINS; ++Pin) {
+		pca9555Toggle(Pin);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
 	pca9555Reset();
