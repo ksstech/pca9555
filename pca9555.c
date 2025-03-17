@@ -268,52 +268,52 @@ int	pca9555Config(i2c_di_t * psI2C) {
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	// configure as outputs and display
-	wprintfx(NULL, "Default (all Outputs )status\r\n");
 	pca9555WriteRegVal(pca9555_CFG, 0x0000);
+	wprintfx(NULL, "Default (all Outputs )status" strNL);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	wprintfx(NULL, "All outputs (OFF) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0x0000);
+	wprintfx(NULL, "All outputs (OFF) status" strNL);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all ON and display
-	wprintfx(NULL, "All outputs (ON) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0xFFFF);
+	wprintfx(NULL, "All outputs (ON) status" strNL);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	wprintfx(NULL, "All outputs (OFF) status\r\n");
 	pca9555WriteRegVal(pca9555_OUT, 0x0000);
+	wprintfx(NULL, "All outputs (OFF) status" strNL);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all back to inputs and display
-	wprintfx(NULL, "All Inputs (again) status\r\n");
 	pca9555WriteRegVal(pca9555_CFG, 0xFFFF);
+	wprintfx(NULL, "All Inputs (again) status" strNL);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// Change INput to OUTput(0) and turn ON(1)
-	wprintfx(NULL, "Config as Outputs 1 by 1, switch ON using SetState\r\n");
 	for (u8_t pin = 0; pin < pca9555NUM_PINS; pin++) {
 		pca9555DIG_OUT_Config(pin);				// default to OFF (0) after config
 		pca9555DIG_OUT_SetState(pin, 1);
+	wprintfx(NULL, "Config as Outputs 1 by 1, switch ON using SetState" strNL);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	wprintfx(NULL, "Switch OFF 1 by 1 using TOGGLE\r\n");
 	for (u8_t pin = 0; pin < pca9555NUM_PINS; ++pin) {
 		pca9555DIG_OUT_Toggle(pin);
+	wprintfx(NULL, "Switch OFF 1 by 1 using TOGGLE" strNL);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
 	pca9555Reset();
-	wprintfx(NULL, "Diagnostics completed. All LEDs = OFF !!!\r\n");
+	wprintfx(NULL, "Diagnostics completed. All LEDs = OFF !!!" strNL);
 	return erSUCCESS;
 }
 
 int pca9555Report(report_t * psR) {
 	int iRV = halI2C_DeviceReport(psR, (void *) sPCA9555.psI2C);
-	iRV += wprintfx(psR, "Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu\r\n\n",
+	iRV += wprintfx(psR, "Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu" strNLx2,
 			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
 			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount);
 	return iRV;
