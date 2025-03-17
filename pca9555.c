@@ -204,13 +204,13 @@ int	pca9555Check(void) {
 	}
 	++pcaResetCount;
 	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
-	SL_NOT("Rin=x%04hX Rout=x%04hX Diff=x%04hX Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaResetCount, pcaSuccessCount);
+	SL_NOT("Rin=x%04hX  Rout=x%04hX  Diff=x%04hX  Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaResetCount, pcaSuccessCount);
 	// general reset, reconfigure and start again...
 	halI2C_ErrorHandler(sPCA9555.psI2C, __FUNCTION__, ESP_FAIL);	/* error code chosen to force FSM reset */
 	return 1;
 }
 
-#define	pca9555TEST_INTERVAL			300
+#define	pca9555TEST_INTERVAL			300				// mSec delay between test stages
 
 int	pca9555Identify(i2c_di_t * psI2C) {
 	sPCA9555.psI2C = psI2C;
