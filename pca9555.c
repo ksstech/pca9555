@@ -148,7 +148,7 @@ int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 // door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
 // to check that the PCA9555 can be read and that the value read back corresponds
 // with the last value written. If not, FSM of I2C peripheral on the ESP32 must be reset completely
-#define	pcaCHECK_INTERVAL	2
+#define	pcaCHECK_INTERVAL	5
 u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
 int	pca9555Check(void) {
