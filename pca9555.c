@@ -55,10 +55,10 @@ DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
-#if (appPLTFRM == HW_AC01)									// defaults for both AC00/1
-const u16_t pca9555Out = 0b0000000000000000;					// all 0=OFF
-const u16_t pca9555Pol = 0b0000000000000000;					// all NON inverted
-const u16_t pca9555Cfg = 0b0000000000000000;					// all outputs
+#if (appPLTFRM == HW_AC01)								/* defaults for both AC0x */
+	static const u16_t pca9555Out = 0b0000000000000000;		/* all 0=OFF */
+	static const u16_t pca9555Pol = 0b0000000000000000;		/* all NON inverted */
+	static const u16_t pca9555Cfg = 0b0000000000000000;		/* all outputs */
 #endif
 
 // ####################################### Local functions #########################################
