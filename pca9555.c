@@ -89,94 +89,56 @@ void pca9555Reset(void) {
 
 // ###################################### Global functions #########################################
 
-void pca9555DIG_IN_Config(u8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
-	#endif
-	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] | (1 << pin));	// 1 = Input
-}
-
-u8_t pca9555DIG_IN_GetState(u8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
-	#endif
-	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 1);
-	int iRV = pca9555ReadRegister(pca9555_IN);
-	if (iRV == erSUCCESS)
-		return (sPCA9555.Regs[pca9555_IN] & (0x0001 << pin)) ? 1 : 0;
-	xSyslogError(__FUNCTION__, iRV);
+int pca9555WriteAll(void) {
+	if (sPCA9555.fDirty) {
+		pca9555WriteRegister(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
+		return 1;
+	}
 	return 0;
 }
 
-void pca9555DIG_IN_Invert(u8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
+int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
+	IF_myASSERT(debugPARAM, Pin < pca9555NUM_PINS && (Func < pca9555FUNC));
 	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
+	if (sSysFlags.ac00 && Pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
+		Pin = 7 - Pin;
 	#endif
-	IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << pin)) == 1);	// ensure INPUT pin
-	pca9555WriteRegVal(pca9555_POL, sPCA9555.Regs[pca9555_POL] ^ (1U << pin));
-}
+	if (Func >= stateTGL_LAZY) {						// All OUTput pin only function
+		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1 << Pin)) == 0);
+		if (Func < stateSET_LAZY) {						// ONLY stateTGL_LAZY & stateTGL
+			NewState = sPCA9555.Regs[pca9555_OUT] & (1U << Pin) ? 0 : 1;
+			Func += (stateSET_LAZY - stateTGL_LAZY);	// adjust Func from stateTGL???? to stateSET???
+		}
+		bool CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << Pin)) ? 1 : 0;
+		if (NewState != CurState) {
+			if (NewState == 1)						// set to 1
+				sPCA9555.Regs[pca9555_OUT] |= (1U << Pin);
+			else									// clear to 0
+				sPCA9555.Regs[pca9555_OUT] &= ~(1U << Pin);
+			sPCA9555.fDirty = 1;					// bit just changed, show as dirty
+		}
+		return (Func == stateSET_LAZY) ? sPCA9555.fDirty : pca9555WriteAll();
 
-void pca9555DIG_OUT_Config(u8_t pin) {
-	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
-	#endif
-	pca9555WriteRegVal(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] & ~(1U << pin));
-}
+	} else if (Func == stateGET) {
+		if (sPCA9555.Regs[pca9555_CFG] & (1 << Pin)) {	// configured as INput ?
+			int iRV = pca9555ReadRegister(pca9555_IN);
+			return (iRV == erSUCCESS) ? ((sPCA9555.Regs[pca9555_IN] & (1 << Pin)) ? 1 : 0) : xSyslogError(__FUNCTION__, iRV);
+		} else {										// configured as OUTput
+			return (sPCA9555.Regs[pca9555_OUT] & (1 << Pin)) ? 1 : 0;
+		}
 
-bool pca9555DIG_OUT_WriteAll(void) {
-	if (sPCA9555.fDirty == 0)
-		return 0;
-	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
-	return 1;
-}
+	} else if (Func == cfgINV) {						// MUST be INput
+		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << Pin)) == 1);
+		pca9555WriteRegister(pca9555_POL, sPCA9555.Regs[pca9555_POL] ^ (1U << Pin));
 
-bool pca9555DIG_OUT_SetStateLazy(u8_t pin, u8_t NewState) {
-	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS);
-	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
-	#endif
-	IF_myASSERT(debugPARAM, (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
-	u8_t CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << pin)) ? 1 : 0;
-	if (NewState != CurState) {
-		if (NewState == 1)
-			sPCA9555.Regs[pca9555_OUT] |= (1U << pin);		// set to 1
-		else
-			sPCA9555.Regs[pca9555_OUT] &= ~(1U << pin);					// clear to 0
-		sPCA9555.fDirty = 1;							// bit just changed, show as dirty
+	} else if (Func == cfgDIR) {						// Direction INput vs OUTput
+		if (NewState == 1) {							// 1=input
+			pca9555WriteRegister(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] | (1 << Pin));
+		} else {										// 0=output
+			pca9555WriteRegister(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] & ~(1U << Pin));
+		}
 	}
-	return sPCA9555.fDirty;							// buffer might be dirty from an earlier change
-}
-
-bool pca9555DIG_OUT_SetState(u8_t pin, u8_t NewState) {
-	pca9555DIG_OUT_SetStateLazy(pin, NewState);
-	return pca9555DIG_OUT_WriteAll();
-}
-
-int	pca9555DIG_OUT_GetState(u8_t pin) {
-	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
-	#endif
-	IF_myASSERT(debugPARAM, pin < pca9555NUM_PINS && (sPCA9555.Regs[pca9555_CFG] & (1 << pin)) == 0);
-	return (sPCA9555.Regs[pca9555_OUT] & (1 << pin)) ? 1 : 0;
-}
-
-void pca9555DIG_OUT_Toggle(u8_t pin) {
-	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
-		pin = 7 - pin;
-	#endif
-	IF_myASSERT(debugPARAM, (pin < pca9555NUM_PINS) && (sPCA9555.Regs[pca9555_CFG] & (0x0001 << pin)) == 0);
-	pca9555WriteRegVal(pca9555_OUT, sPCA9555.Regs[pca9555_OUT] ^ (1U << pin));
+	return 0;
 }
 
 // ################################## Diagnostics functions ########################################
