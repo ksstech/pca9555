@@ -89,7 +89,7 @@ void pca9555Reset(void) {
 
 // ###################################### Global functions #########################################
 
-int pca9555WriteAll(void) {
+int pca9555Flush(void) {
 	if (sPCA9555.fDirty) {
 		pca9555WriteRegister(pca9555_OUT, sPCA9555.Regs[pca9555_OUT]);
 		return 1;
@@ -151,7 +151,7 @@ int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 #define	pcaCHECK_INTERVAL	5
 u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
-int	pca9555Check(void) {
+int	pca9555Verify(void) {
 	++pcaCheckInterval;
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
 		return 0;
