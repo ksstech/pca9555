@@ -97,46 +97,44 @@ int pca9555Flush(void) {
 	return 0;
 }
 
+
 int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 	IF_myASSERT(debugPARAM, Pin < pca9555NUM_PINS && (Func < pca9555FUNC));
 	#if (appPLTFRM == HW_AC01)
 	if (sSysFlags.ac00 && Pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
 		Pin = 7 - Pin;
 	#endif
+	u8_t Mask = 1 << Pin;
 	if (Func >= stateTGL_LAZY) {						// All OUTput pin only function
-		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1 << Pin)) == 0);
-		if (Func < stateSET_LAZY) {						// ONLY stateTGL_LAZY & stateTGL
-			NewState = sPCA9555.Regs[pca9555_OUT] & (1U << Pin) ? 0 : 1;
-			Func += (stateSET_LAZY - stateTGL_LAZY);	// adjust Func from stateTGL???? to stateSET???
+		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & Mask) == 0);
+		bool CurState = (sPCA9555.Regs[pca9555_OUT] & Mask) ? 1 : 0;
+		if (Func <= stateTGL) {							// stateTGL[_LAZY]
+			NewState = sPCA9555.Regs[pca9555_OUT] & Mask ? 0 : 1;
+			Func += (stateSET_LAZY - stateTGL_LAZY);	// adjust stateTGL[_LAZY] -> stateSET[_LAZY]
 		}
-		bool CurState = (sPCA9555.Regs[pca9555_OUT] & (1U << Pin)) ? 1 : 0;
 		if (NewState != CurState) {
-			if (NewState == 1)						// set to 1
-				sPCA9555.Regs[pca9555_OUT] |= (1U << Pin);
-			else									// clear to 0
-				sPCA9555.Regs[pca9555_OUT] &= ~(1U << Pin);
-			sPCA9555.fDirty = 1;					// bit just changed, show as dirty
+			if (NewState)	sPCA9555.Regs[pca9555_OUT] |= Mask;
+			else			sPCA9555.Regs[pca9555_OUT] &= ~Mask;
+			sPCA9555.fDirty = 1;						// bit just changed, show as dirty
 		}
-		return (Func == stateSET_LAZY) ? sPCA9555.fDirty : pca9555WriteAll();
+		return (Func <= stateSET_LAZY) ? sPCA9555.fDirty : pca9555Flush();
 
 	} else if (Func == stateGET) {
-		if (sPCA9555.Regs[pca9555_CFG] & (1 << Pin)) {	// configured as INput ?
+		if (sPCA9555.Regs[pca9555_CFG] & Mask) {		// configured as INput ?
 			int iRV = pca9555ReadRegister(pca9555_IN);
-			return (iRV == erSUCCESS) ? ((sPCA9555.Regs[pca9555_IN] & (1 << Pin)) ? 1 : 0) : xSyslogError(__FUNCTION__, iRV);
+			return (iRV == erSUCCESS) ? ((sPCA9555.Regs[pca9555_IN] & Mask) ? 1 : 0) : xSyslogError(__FUNCTION__, iRV);
 		} else {										// configured as OUTput
-			return (sPCA9555.Regs[pca9555_OUT] & (1 << Pin)) ? 1 : 0;
+			return (sPCA9555.Regs[pca9555_OUT] & Mask) ? 1 : 0;
 		}
 
 	} else if (Func == cfgINV) {						// MUST be INput
-		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & (1U << Pin)) == 1);
-		pca9555WriteRegister(pca9555_POL, sPCA9555.Regs[pca9555_POL] ^ (1U << Pin));
+		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & Mask) == 1);
+		pca9555WriteRegister(pca9555_POL, sPCA9555.Regs[pca9555_POL] ^ Mask);
 
 	} else if (Func == cfgDIR) {						// Direction INput vs OUTput
-		if (NewState == 1) {							// 1=input
-			pca9555WriteRegister(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] | (1 << Pin));
-		} else {										// 0=output
-			pca9555WriteRegister(pca9555_CFG, sPCA9555.Regs[pca9555_CFG] & ~(1U << Pin));
-		}
+		if (NewState)	sPCA9555.Regs[pca9555_CFG] |= Mask;
+		else			sPCA9555.Regs[pca9555_CFG] &= ~Mask;
+		pca9555WriteRegister(pca9555_CFG, sPCA9555.Regs[pca9555_CFG]);
 	}
 	return 0;
 }
