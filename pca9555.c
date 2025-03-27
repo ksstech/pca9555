@@ -9,8 +9,9 @@
 #include "syslog.h"
 #include "systiming.h"
 
-#define	debugFLAG					0xF000
+// ########################################## MACROS ###############################################
 
+#define	debugFLAG					0xF000
 #define	debugTIMING					(debugFLAG_GLOBAL & debugFLAG & 0x1000)
 #define	debugTRACK					(debugFLAG_GLOBAL & debugFLAG & 0x2000)
 #define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
@@ -26,13 +27,20 @@ pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
 #if (appPLTFRM == HW_AC01)								/* defaults for both AC0x */
-	static const u16_t pca9555Out = 0b0000000000000000;		/* all 0=OFF */
-	static const u16_t pca9555Pol = 0b0000000000000000;		/* all NON inverted */
-	static const u16_t pca9555Cfg = 0b0000000000000000;		/* all outputs */
+	static const u16_t pca9555Out = 0b0000000000000000;	/* all 0=OFF */
+	static const u16_t pca9555Pol = 0b0000000000000000;	/* all NON inverted */
+	static const u16_t pca9555Cfg = 0b0000000000000000;	/* all outputs */
 #endif
+
+// ####################################### Public variables ########################################
 
 // ####################################### Local functions #########################################
 
+/**
+ * @brief	read 16bit value from specified register
+ * @param[in]	Reg	number range 0->3
+ * @return	result from the I2C operation
+ */
 static int pca9555ReadRegister(u8_t Reg) {
 	u8_t cChr = Reg << 1;								// force to u16_t boundary 0/2/4/6
 	// Adding a delay of 0mS ensure that write & read operations are separately executed
@@ -41,6 +49,12 @@ static int pca9555ReadRegister(u8_t Reg) {
 
 static int pca9555WriteRegister(u8_t Reg, u16_t Val) {
 	sPCA9555.Regs[Reg] = Val;
+/**
+ * @brief
+ * @param[in]
+ * @param[in]
+ * @return
+ */
 	u8_t cBuf[3];
 	cBuf[0] = Reg << 1;									// force to u16_t boundary 0 / 2 / 4 / 6
 	cBuf[1] = Val >> 8;
@@ -57,7 +71,6 @@ void pca9555Reset(void) {
 	pca9555WriteRegister(pca9555_OUT, pca9555Out);
 }
 
-// ###################################### Global functions #########################################
 
 int pca9555Flush(void) {
 	if (sPCA9555.fDirty) {
@@ -67,11 +80,10 @@ int pca9555Flush(void) {
 	return 0;
 }
 
-
 int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 	IF_myASSERT(debugPARAM, Pin < pca9555NUM_PINS && (Func < pca9555FUNC));
 	#if (appPLTFRM == HW_AC01)
-	if (sSysFlags.ac00 && Pin < 8)						// AC01 pins 0->7 map to 7->0 on AC00
+	if (sSysFlags.ac00 && Pin < 8)						// AC01 pins 0->7 map as 7->0 on AC00
 		Pin = 7 - Pin;
 	#endif
 	u8_t Mask = 1 << Pin;
@@ -89,9 +101,9 @@ int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 		}
 		return (Func <= stateSET_LAZY) ? sPCA9555.fDirty : pca9555Flush();
 
-	} else if (Func == stateGET) {
+	} else if (Func == stateGET) {						// Can be INPut or OUTput....
 		if (sPCA9555.Regs[pca9555_CFG] & Mask) {		// configured as INput ?
-			int iRV = pca9555ReadRegister(pca9555_IN);
+			int iRV = pca9555ReadRegister(pca9555_IN);	// read live status
 			return (iRV == erSUCCESS) ? ((sPCA9555.Regs[pca9555_IN] & Mask) ? 1 : 0) : xSyslogError(__FUNCTION__, iRV);
 		} else {										// configured as OUTput
 			return (sPCA9555.Regs[pca9555_OUT] & Mask) ? 1 : 0;
@@ -110,7 +122,6 @@ int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 }
 
 // ################################## Diagnostics functions ########################################
-
 
 // Due to an induced reverse voltage cause by the collapsing magnetic field of the solenoid in the
 // door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
