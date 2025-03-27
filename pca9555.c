@@ -213,37 +213,37 @@ exit:
 
 int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	// configure as outputs and display
-	wprintfx(NULL, "Default (all Outputs )status" strNL);
+	PX("Default (all Outputs )status" strNL);
 	sPCA9555.Regs[pca9555_CFG] = 0x0000;
 	pca9555WriteRegister(pca9555_CFG);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	wprintfx(NULL, "All outputs (OFF) status" strNL);
+	PX("All outputs (OFF) status" strNL);
 	sPCA9555.Regs[pca9555_OUT] = 0x0000;
 	pca9555WriteRegister(pca9555_OUT);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all ON and display
-	wprintfx(NULL, "All outputs (ON) status" strNL);
+	PX("All outputs (ON) status" strNL);
 	sPCA9555.Regs[pca9555_OUT] = 0xFFFF;
 	pca9555WriteRegister(pca9555_OUT);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all OFF and display
-	wprintfx(NULL, "All outputs (OFF) status" strNL);
+	PX("All outputs (OFF) status" strNL);
 	sPCA9555.Regs[pca9555_OUT] = 0x0000;
 	pca9555WriteRegister(pca9555_OUT);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// set all back to inputs and display
-	wprintfx(NULL, "All Inputs (again) status" strNL);
+	PX("All Inputs (again) status" strNL);
 	sPCA9555.Regs[pca9555_CFG] = 0xFFFF;
 	pca9555WriteRegister(pca9555_CFG);
 	vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 
 	// Change INput to OUTput(0) and turn ON(1)
-	wprintfx(NULL, "Config as Outputs 1 by 1, switch ON using SetState" strNL);
+	PX("Config as Outputs 1 by 1, switch ON using SetState" strNL);
 	for (u8_t Pin = 0; Pin < pca9555NUM_PINS; Pin++) {
 		pca9555Direction(Pin, 0);					// default to OFF (0) after config
 		pca9555SetState(Pin, 1);
@@ -251,12 +251,12 @@ int	pca9555Diagnostics(i2c_di_t * psI2C) {
 	}
 
 	// then switch them OFF 1 by 1 using TOGGLE functionality
-	wprintfx(NULL, "Switch OFF 1 by 1 using TOGGLE" strNL);
+	PX("Switch OFF 1 by 1 using TOGGLE" strNL);
 	for (u8_t Pin = 0; Pin < pca9555NUM_PINS; ++Pin) {
 		pca9555Toggle(Pin);
 		vTaskDelay(pdMS_TO_TICKS(pca9555TEST_INTERVAL));
 	}
-	wprintfx(NULL, "Diagnostics completed. All LEDs = OFF !!!" strNL);
+	PX("Diagnostics completed. All LEDs = OFF !!!" strNL);
 	return erSUCCESS;
 }
 
