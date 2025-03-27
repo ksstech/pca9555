@@ -80,7 +80,7 @@ int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 	if (sSysFlags.ac00 && Pin < 8)						// AC01 pins 0->7 map as 7->0 on AC00
 		Pin = 7 - Pin;
 	#endif
-	u8_t Mask = 1 << Pin;
+	u16_t Mask = 1 << Pin;
 	if (Func >= stateTGL_LAZY) {						// All OUTput pin only function
 		IF_myASSERT(debugTRACK, (sPCA9555.Regs[pca9555_CFG] & Mask) == 0);
 		bool CurState = (sPCA9555.Regs[pca9555_OUT] & Mask) ? 1 : 0;
