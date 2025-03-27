@@ -3,7 +3,6 @@
 #include "hal_platform.h"
 
 #if (HAL_PCA9555 > 0)
-#include "hal_i2c_common.h"
 #include "errors_events.h"
 #include "pca9555.h"
 #include "report.h"
@@ -17,38 +16,9 @@
 #define	debugPARAM					(debugFLAG_GLOBAL & debugFLAG & 0x4000)
 #define	debugRESULT					(debugFLAG_GLOBAL & debugFLAG & 0x8000)
 
-// ########################################## MACROS ###############################################
-
-#define	pca9555ADDR_LOW				0x20				// default with A2 A1 A0 all '0'
-#define	pca9555ADDR_HIGH			0x27
-#define	pca9555NUM_PINS				16
-
 // ######################################## Enumerations ###########################################
 
-enum {													// Register index enumeration
-	pca9555_IN,											// RO - INput status registers
-	pca9555_OUT, 										// WO - OUTput control registers
-	pca9555_POL, 										// WO - INput POLarity, 1=Inverted
-	pca9555_CFG, 										// Direction config 0=OUT 1=IN
-	pca9555_NUM,
-};
-
 // ######################################### Structures ############################################
-
-typedef struct __attribute__((packed)) pca9555_s {
-	i2c_di_t *	psI2C;									// size = 4
-	union {												// size = 8
-		u16_t Regs[pca9555_NUM];
-		struct __attribute__((packed)) {
-			u16_t	Reg_IN;
-			u16_t	Reg_OUT;
-			u16_t	Reg_POL;
-			u16_t	Reg_CFG;
-		};
-	};
-	bool fDirty;
-} pca9555_t;
-DUMB_STATIC_ASSERT(sizeof(pca9555_t) == 13);
 
 // ######################################### Local variables #######################################
 
