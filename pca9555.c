@@ -6,7 +6,7 @@
 #include "hal_i2c_common.h"
 #include "errors_events.h"
 #include "pca9555.h"
-#include "printfx.h"
+#include "report.h"
 #include "syslog.h"
 #include "systiming.h"
 
