@@ -262,7 +262,7 @@ int	pca9555Diagnostics(i2c_di_t * psI2C) {
 
 int pca9555Report(report_t * psR) {
 	int iRV = halI2C_DeviceReport(psR, (void *) sPCA9555.psI2C);
-	iRV += wprintfx(psR, "Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu" strNLx2,
+	iRV += report(psR, "Inp=0x%04hX  Out=0x%04hX  Pol=0x%04hX  Cfg=0x%04hx  OK=%lu  Fail=%lu" strNLx2,
 			sPCA9555.Regs[pca9555_IN], sPCA9555.Regs[pca9555_OUT], sPCA9555.Regs[pca9555_POL],
 			sPCA9555.Regs[pca9555_CFG], pcaSuccessCount, pcaResetCount);
 	return iRV;
