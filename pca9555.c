@@ -62,8 +62,6 @@ static int pca9555WriteRegister(u8_t Reg) {
 	return halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
 }
 
-
-
 int pca9555Flush(void) {
 	if (sPCA9555.fDirty) {
 		IF_CPT(debugFLUSH, "Flush x%04X" strNL, sPCA9555.Regs[pca9555_OUT]);
