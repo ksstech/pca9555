@@ -136,10 +136,15 @@ int	pca9555Verify(void) {
 		return 0; 
 	}
 	++pcaResetCount;
+#if (appNEW_CODE == 1)
+	// attempt to correct the error by rewriting the output register
+	SL_NOT("Rout=x%04hX  Rinv=x%04hX  Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, pcaResetCount, pcaSuccessCount);
+	pca9555WriteRegister(pca9555_OUT);
+#else
 	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
 	SL_NOT("Rin=x%04hX  Rout=x%04hX  Diff=x%04hX  Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaResetCount, pcaSuccessCount);
-	// general reset, reconfigure and start again...
-	halI2C_ResetSubSystem(sPCA9555.psI2C);
+	halI2C_ResetSubSystem(sPCA9555.psI2C);				// general reset, reconfigure and start again...
+#endif
 	return 1;
 }
 
