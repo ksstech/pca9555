@@ -49,14 +49,13 @@ static int pca9555ReadRegister(u8_t Reg) {
 }
 
 /**
- * @brief
- * @param[in]
- * @param[in]
- * @return
+ * @brief	write 16bit value to specified register
+ * @param[in]	Reg	number range 0->3
+ * @return	result from the I2C operation
  */
 static int pca9555WriteRegister(u8_t Reg) {
 	u8_t cBuf[3];
-	cBuf[0] = Reg << 1;									// force to u16_t boundary 0 / 2 / 4 / 6
+	cBuf[0] = Reg << 1;									// force to u16_t boundary 0/2/4/6
 	cBuf[1] = sPCA9555.Regs[Reg] >> 8;
 	cBuf[2] = sPCA9555.Regs[Reg] & 0xFF;
 	return halI2C_Queue(sPCA9555.psI2C, i2cW_FB, cBuf, sizeof(cBuf), (u8_t *) NULL, 0, (i2cq_p1_t) NULL, (i2cq_p2_t) NULL);
@@ -118,7 +117,7 @@ int pca9555Function(pca9555func_e Func, u8_t Pin, bool NewState) {
 // Due to an induced reverse voltage cause by the collapsing magnetic field of the solenoid in the
 // door striker or water valve it can cause the I2C bus to "hang". In order to resolve this we need
 // to check that the PCA9555 can be read and that the value read back corresponds
-// with the last value written. If not, FSM of I2C peripheral on the ESP32 must be reset completely
+// with the last value written. If not, try to correct the value...
 #define	pcaCHECK_INTERVAL	5
 u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
