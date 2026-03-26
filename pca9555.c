@@ -20,7 +20,30 @@
 
 // ######################################## Enumerations ###########################################
 
+enum {													// Register index enumeration
+	pca9555_IN,											// RO - INput status registers
+	pca9555_OUT, 										// WO - OUTput control registers
+	pca9555_POL, 										// WO - INput POLarity, 1=Inverted
+	pca9555_CFG, 										// Direction config 0=OUT 1=IN
+	pca9555_NUM,
+};
+
 // ######################################### Structures ############################################
+
+typedef struct __attribute__((packed)) pca9555_s {
+	i2c_di_t *	psI2C;									// size = 4
+	union {												// size = 8
+		u16_t Regs[pca9555_NUM];
+		struct __attribute__((packed)) {
+			u16_t	Reg_IN;
+			u16_t	Reg_OUT;
+			u16_t	Reg_POL;
+			u16_t	Reg_CFG;
+		};
+	};
+	bool fDirty;
+} pca9555_t;
+static_assert(sizeof(pca9555_t) == 13, "Invalid size");
 
 // ######################################### Local variables #######################################
 
