@@ -50,7 +50,7 @@ static_assert(sizeof(pca9555_t) == 13, "Invalid size");
 pca9555_t sPCA9555 = { 0 };
 const char * const DS9555RegNames[] = { "Input", "Output", "PolInv", "Config" };
 
-#if (cmakePLTFRM == HW_AC01) || (cmakePLTFRM == HW_RS01)	/* defaults for both AC0x and RS01 */
+#if (cmakePLTFRM == HW_AC01) || (cmakePLTFRM == HW_RS01) || (cmakePLTFRM == HW_RS02)
 	static const u16_t pca9555Out = 0b0000000000000000;	/* all 0=OFF */
 	static const u16_t pca9555Pol = 0b0000000000000000;	/* all NON inverted */
 	static const u16_t pca9555Cfg = 0b0000000000000000;	/* all outputs */
@@ -151,7 +151,7 @@ int	pca9555Verify(void) {
 	pca9555ReadRegister(pca9555_IN);					// Time to do a check
 	u16_t RegInInv = sPCA9555.Reg_IN;
 	// AMM not sure the logic behind this....
-	#if (cmakePLTFRM == HW_AC01) || (cmakePLTFRM == HW_RS01)
+	#if (cmakePLTFRM == HW_AC01) || (cmakePLTFRM == HW_RS01) || (cmakePLTFRM == HW_RS02)
 		RegInInv = (RegInInv >> 8) | (RegInInv << 8);
 	#endif
 	if (RegInInv == sPCA9555.Reg_OUT) {
