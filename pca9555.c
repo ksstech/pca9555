@@ -87,8 +87,8 @@ static int pca9555WriteRegister(u8_t Reg) {
 int pca9555Flush(void) {
 	if (sPCA9555.fDirty) {
 		IF_CPT(debugFLUSH, "Flush x%04X" strNL, sPCA9555.Regs[pca9555_OUT]);
-		pca9555WriteRegister(pca9555_OUT);
-		sPCA9555.fDirty = 0;							// show as clean, just written
+		if (pca9555WriteRegister(pca9555_OUT) >= erSUCCESS)
+			sPCA9555.fDirty = 0;						// only mark clean once the write actually succeeded
 		return 1;
 	}
 	return 0;
@@ -148,26 +148,28 @@ int	pca9555Verify(void) {
 	++pcaCheckInterval;
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
 		return 0;
-	pca9555ReadRegister(pca9555_IN);					// Time to do a check
+	int iRV = pca9555ReadRegister(pca9555_IN);			// Time to do a check
+	if (iRV < erSUCCESS)								// read failed: the I2C task's ErrorHandler owns bus recovery,
+		return 0;										//  so don't compare stale data or trigger a cross-task reset
+	// The IN read-back is the byte-swap of the OUT shadow: pca9555WriteRegister() sends the OUT shadow
+	// MSB-first (Port0 <- high byte, Port1 <- low byte), while pca9555ReadRegister() stores the received
+	// bytes little-endian (Port0 -> low byte, Port1 -> high byte). Swapping IN back recovers OUT byte
+	// order, so a healthy device satisfies RegInInv == Reg_OUT.
 	u16_t RegInInv = sPCA9555.Reg_IN;
-	// AMM not sure the logic behind this....
 	#if (cmakePLTFRM == HW_AC01) || (cmakePLTFRM == HW_RS01) || (cmakePLTFRM == HW_RS02)
 		RegInInv = (RegInInv >> 8) | (RegInInv << 8);
 	#endif
 	if (RegInInv == sPCA9555.Reg_OUT) {
-		++pcaSuccessCount;								// all OK, no reset required...
-		return 0; 
+		++pcaSuccessCount;								// all OK, no correction required...
+		return 0;
 	}
+	// Read OK but the outputs drifted (reverse-EMF transient corrupted the output latch on a working
+	// bus): simply re-drive the commanded OUT state. A full halI2C_ResetSubSystem() here would be a
+	// cross-task sledgehammer that resets every device and drops all outputs, so it is deliberately not
+	// used - genuine bus errors are handled by the I2C task's ErrorHandler (see the iRV check above).
 	++pcaResetCount;
-#if (appNEW_CODE == 1)
-	// attempt to correct the error by rewriting the output register
 	SL_NOT("Rout=x%04hX  Rinv=x%04hX  Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, pcaResetCount, pcaSuccessCount);
 	pca9555WriteRegister(pca9555_OUT);
-#else
-	u16_t ErrorBits = RegInInv ^ sPCA9555.Reg_OUT;		// Determine bits that are wrong
-	SL_NOT("Rin=x%04hX  Rout=x%04hX  Diff=x%04hX  Err=%lu vs %lu", RegInInv, sPCA9555.Reg_OUT, ErrorBits, pcaResetCount, pcaSuccessCount);
-	halI2C_ResetSubSystem(sPCA9555.psI2C);				// general reset, reconfigure and start again...
-#endif
 	return 1;
 }
 
