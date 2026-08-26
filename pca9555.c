@@ -146,7 +146,7 @@ u32_t pcaSuccessCount, pcaResetCount, pcaCheckInterval;
 
 int	pca9555Verify(void) {
 	++pcaCheckInterval;
-	if ((pcaCheckInterval % pcaCHECK_INTERVAL) == 0)
+	if ((pcaCheckInterval % pcaCHECK_INTERVAL) != 0)
 		return 0;
 	int iRV = pca9555ReadRegister(pca9555_IN);			// Time to do a check
 	if (iRV < erSUCCESS)								// read failed: the I2C task's ErrorHandler owns bus recovery,
