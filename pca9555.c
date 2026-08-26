@@ -199,11 +199,12 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	// Step 3 - Check initial default values
 	if (sPCA9555.Regs[pca9555_POL] != 0 || sPCA9555.Regs[pca9555_CFG] != 0xFFFF)
 		return erINV_WHOAMI;
-	u16_t OrigOUT = sPCA9555.Regs[pca9555_OUT];			// passed steps 1~3, now step 4
+	sPCA9555.Regs[pca9555_OUT] = pca9555Out;			// latch safe idle BEFORE pins become outputs
+	pca9555WriteRegister(pca9555_OUT);					//  (POR latch is 0xFFFF = all actuators ON)
 	sPCA9555.Regs[pca9555_CFG] = 0x0000;				// all OUTputs
 	pca9555WriteRegister(pca9555_CFG);
 	pca9555ReadRegister(pca9555_OUT);
-	if (sPCA9555.Regs[pca9555_OUT] != OrigOUT)
+	if (sPCA9555.Regs[pca9555_OUT] != pca9555Out)
 		return erINV_WHOAMI;
 	psI2C->IDok = 1;
 	psI2C->Test	= 0;
@@ -217,16 +218,16 @@ int	pca9555Config(i2c_di_t * psI2C) {
 		goto exit;
 	psI2C->CFGok = 0;
 	halEventUpdateDevice(devMASK_PCA9555, 0);
-	sPCA9555.Regs[pca9555_CFG] = pca9555Cfg;
-	iRV = pca9555WriteRegister(pca9555_CFG);			// set required direction, IN vs OUT
+	sPCA9555.Regs[pca9555_OUT] = pca9555Out;
+	iRV = pca9555WriteRegister(pca9555_OUT);			// latch safe outputs BEFORE any pin becomes an output
 	if (iRV < erSUCCESS)
 		goto exit;
 	sPCA9555.Regs[pca9555_POL] = pca9555Pol;
 	iRV = pca9555WriteRegister(pca9555_POL);			// set required invertion status
 	if (iRV < erSUCCESS)
 		goto exit;
-	sPCA9555.Regs[pca9555_OUT] = pca9555Out;
-	iRV = pca9555WriteRegister(pca9555_OUT);			// set required output status (optional)
+	sPCA9555.Regs[pca9555_CFG] = pca9555Cfg;
+	iRV = pca9555WriteRegister(pca9555_CFG);			// direction LAST: pins switch onto the safe latch
 	if (iRV < erSUCCESS)
 		goto exit;
 	psI2C->CFGok = 1;
