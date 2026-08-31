@@ -178,7 +178,7 @@ int	pca9555Verify(void) {
 int	pca9555Identify(i2c_di_t * psI2C) {
 	sPCA9555.psI2C = psI2C;
 	psI2C->Type = i2cDEV_PCA9555;
-	psI2C->Speed = i2cSPEED_400;
+	psI2C->Speed = i2cSPEED_100;						// v2 driver 400KHz marginality on classic ESP32 (esp-idf #14401); v1-era margins
 	psI2C->TObus = 25;
 	psI2C->Test	= 1;
 	// Step 1 - ensure all set to defaults
