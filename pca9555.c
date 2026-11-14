@@ -149,7 +149,7 @@ int	pca9555Verify(void) {
 	if ((pcaCheckInterval % pcaCHECK_INTERVAL) != 0)
 		return 0;
 	int iRV = pca9555ReadRegister(pca9555_IN);			// Time to do a check
-	if (iRV < erSUCCESS)								// read failed: the I2C task's ErrorHandler owns bus recovery,
+	if (iRV != erSUCCESS)								// read failed: the I2C task's ErrorHandler owns bus recovery,
 		return 0;										//  so don't compare stale data or trigger a cross-task reset
 	// The IN read-back is the byte-swap of the OUT shadow: pca9555WriteRegister() sends the OUT shadow
 	// MSB-first (Port0 <- high byte, Port1 <- low byte), while pca9555ReadRegister() stores the received
@@ -184,16 +184,16 @@ int	pca9555Identify(i2c_di_t * psI2C) {
 	// Step 1 - ensure all set to defaults
 	sPCA9555.Regs[pca9555_POL] = 0x0000;				// non inverted/normal
 	int iRV = pca9555WriteRegister(pca9555_POL);
-	if (iRV < erSUCCESS)
+	if (iRV != erSUCCESS)
 		goto exit;
 	sPCA9555.Regs[pca9555_CFG] = 0xFFFF;				// all inputs
 	iRV = pca9555WriteRegister(pca9555_CFG);
-	if (iRV < erSUCCESS)
+	if (iRV != erSUCCESS)
 		goto exit;
 	// Step 2 - read all registers
 	for (int r = pca9555_IN; r < pca9555_NUM; ++r) {
 		 iRV = pca9555ReadRegister(r);
-		 if (iRV < erSUCCESS)
+		 if (iRV != erSUCCESS)
 		 	goto exit;
 	}
 	// Step 3 - Check initial default values
@@ -220,15 +220,15 @@ int	pca9555Config(i2c_di_t * psI2C) {
 	halEventUpdateDevice(devMASK_PCA9555, 0);
 	sPCA9555.Regs[pca9555_OUT] = pca9555Out;
 	iRV = pca9555WriteRegister(pca9555_OUT);			// latch safe outputs BEFORE any pin becomes an output
-	if (iRV < erSUCCESS)
+	if (iRV != erSUCCESS)
 		goto exit;
 	sPCA9555.Regs[pca9555_POL] = pca9555Pol;
 	iRV = pca9555WriteRegister(pca9555_POL);			// set required invertion status
-	if (iRV < erSUCCESS)
+	if (iRV != erSUCCESS)
 		goto exit;
 	sPCA9555.Regs[pca9555_CFG] = pca9555Cfg;
 	iRV = pca9555WriteRegister(pca9555_CFG);			// direction LAST: pins switch onto the safe latch
-	if (iRV < erSUCCESS)
+	if (iRV != erSUCCESS)
 		goto exit;
 	psI2C->CFGok = 1;
 	sPCA9555.fDirty = 0;
